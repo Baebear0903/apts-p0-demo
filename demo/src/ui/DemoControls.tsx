@@ -1,7 +1,13 @@
 import { useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { addMinutes, formatDateTime } from '../demo/clock'
 import type { ButtonPermissionKey, ModuleKey } from '../domain/types'
 import { useDemoStore } from '../store/DemoStoreContext'
+import { Button } from '@/components/ui/button'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { FieldSet, FieldLegend } from '@/components/ui/field'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import { CheckRow, NativeCheck } from './kit'
 
 const MODULE_LABELS: Array<{ key: ModuleKey; label: string }> = [
   { key: 'tags', label: '标签中心' },
@@ -42,84 +48,78 @@ export function DemoControls() {
   const inRuleSample = state.session.mode === 'ruleSamples'
 
   return (
-    <div className="side-nav-footer">
-      <button
-        type="button"
-        className="demo-toggle"
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger
+        className="border-input hover:bg-sidebar-accent flex h-8 w-full items-center justify-between rounded-lg border border-dashed px-2.5 text-left text-xs"
         aria-expanded={open}
-        onClick={() => setOpen((value) => !value)}
       >
-        演示控制{open ? ' ▾' : ' ▸'}
-      </button>
-      {open ? (
-        <div className="demo-panel" data-testid="demo-controls">
-          <p>当前时钟 {formatDateTime(state.clock)}</p>
-          <div className="demo-actions">
-            <button type="button" className="btn-ghost" onClick={() => store.reset()}>
-              重置数据
-            </button>
-            <button type="button" className="btn-ghost" onClick={() => store.advanceClock(60)}>
-              推进 1 小时
-            </button>
-            <button type="button" className="btn-ghost" onClick={() => store.advanceClock(24 * 60)}>
-              推进 1 天
-            </button>
-            <button
-              type="button"
-              className="btn-ghost"
-              onClick={() => store.setClock(addMinutes(state.clock, -60))}
-            >
-              回退 1 小时
-            </button>
-            {inRuleSample ? (
-              <button type="button" className="btn-primary" onClick={() => store.unloadRuleSamples()}>
-                退出规则能力样例
-              </button>
-            ) : (
-              <button type="button" className="btn-ghost" onClick={() => store.loadRuleSamples()}>
-                载入规则能力样例
-              </button>
-            )}
+        演示控制
+        <ChevronDown className={`size-3.5 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </CollapsibleTrigger>
+      <CollapsibleContent>
+        <ScrollArea className="mt-2 h-72 rounded-lg bg-background/70 p-2">
+          <div className="text-muted-foreground space-y-3 text-xs" data-testid="demo-controls">
+            <p>当前时钟 {formatDateTime(state.clock)}</p>
+            <div className="flex flex-col gap-1.5">
+              <Button type="button" variant="outline" size="sm" onClick={() => store.reset()}>
+                重置数据
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => store.advanceClock(60)}>
+                推进 1 小时
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => store.advanceClock(24 * 60)}>
+                推进 1 天
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => store.setClock(addMinutes(state.clock, -60))}>
+                回退 1 小时
+              </Button>
+              {inRuleSample ? (
+                <Button type="button" size="sm" onClick={() => store.unloadRuleSamples()}>
+                  退出规则能力样例
+                </Button>
+              ) : (
+                <Button type="button" variant="outline" size="sm" onClick={() => store.loadRuleSamples()}>
+                  载入规则能力样例
+                </Button>
+              )}
+            </div>
+            <FieldSet className="border-border gap-1 rounded-lg border p-2">
+              <FieldLegend variant="label">模拟失败</FieldLegend>
+              <CheckRow>
+                <NativeCheck
+                  checked={state.session.simulateFailure}
+                  onChange={(event) => store.setSimulateFailure(event.target.checked)}
+                />
+                下一次计算失败
+              </CheckRow>
+            </FieldSet>
+            <FieldSet className="border-border gap-1 rounded-lg border p-2">
+              <FieldLegend variant="label">模块可见</FieldLegend>
+              {MODULE_LABELS.map((item) => (
+                <CheckRow key={item.key}>
+                  <NativeCheck
+                    checked={state.session.permissions.modules[item.key]}
+                    onChange={(event) => store.setModulePermission(item.key, event.target.checked)}
+                  />
+                  {item.label}
+                </CheckRow>
+              ))}
+            </FieldSet>
+            <FieldSet className="border-border gap-1 rounded-lg border p-2">
+              <FieldLegend variant="label">按钮权限</FieldLegend>
+              {BUTTON_LABELS.map((item) => (
+                <CheckRow key={item.key}>
+                  <NativeCheck
+                    checked={state.session.permissions.buttons[item.key]}
+                    onChange={(event) => store.setButtonPermission(item.key, event.target.checked)}
+                  />
+                  {item.label}
+                </CheckRow>
+              ))}
+            </FieldSet>
           </div>
-          <fieldset>
-            <legend>模拟失败</legend>
-            <label>
-              <input
-                type="checkbox"
-                checked={state.session.simulateFailure}
-                onChange={(event) => store.setSimulateFailure(event.target.checked)}
-              />
-              下一次计算失败
-            </label>
-          </fieldset>
-          <fieldset>
-            <legend>模块可见</legend>
-            {MODULE_LABELS.map((item) => (
-              <label key={item.key}>
-                <input
-                  type="checkbox"
-                  checked={state.session.permissions.modules[item.key]}
-                  onChange={(event) => store.setModulePermission(item.key, event.target.checked)}
-                />
-                {item.label}
-              </label>
-            ))}
-          </fieldset>
-          <fieldset>
-            <legend>按钮权限</legend>
-            {BUTTON_LABELS.map((item) => (
-              <label key={item.key}>
-                <input
-                  type="checkbox"
-                  checked={state.session.permissions.buttons[item.key]}
-                  onChange={(event) => store.setButtonPermission(item.key, event.target.checked)}
-                />
-                {item.label}
-              </label>
-            ))}
-          </fieldset>
-        </div>
-      ) : null}
-    </div>
+        </ScrollArea>
+      </CollapsibleContent>
+    </Collapsible>
   )
 }

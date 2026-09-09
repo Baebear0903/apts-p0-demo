@@ -86,6 +86,6 @@ describe('识别批次 UI', () => {
     expect(confirmed.ok).toBe(true)
     if (!confirmed.ok) return
     expect(confirmed.snapshotId).toBeNull()
-    expect(confirmed.state.snapshots).toHaveLength(0)
+    expect(confirmed.state.snapshots).toHaveLength(next.snapshots.length)
   })
 })

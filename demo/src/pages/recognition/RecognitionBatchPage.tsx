@@ -18,6 +18,7 @@ import { confirmRecognitionBatch, removeFromReview } from '../../store/store'
 import { PageHeader, StatusText } from '../../ui/PageHeader'
 import { Toast } from '../../ui/Modal'
 import { MemberTable, PatientEvidencePanel } from '../patients/PatientEvidencePanel'
+import { Button, Dd, DescriptionList, Dt, EmptyHint, Muted, PageStack, Panel, Toolbar } from '../../ui/kit'
 
 export function RecognitionBatchPage() {
   const { tagId = '', batchId = '' } = useParams()
@@ -84,12 +85,13 @@ export function RecognitionBatchPage() {
         backLabel="返回识别概览"
       />
       {toast ? <Toast message={toast.text} tone={toast.tone} /> : null}
-      <div className="panel">
-        <dl className="dl">
-          <dt>计算时规则说明</dt>
-          <dd data-testid="batch-logic-summary">{batch.ruleExplanation.logicSummary}</dd>
-          <dt>确认状态</dt>
-          <dd>
+      <PageStack>
+      <Panel>
+        <DescriptionList>
+          <Dt>计算时规则说明</Dt>
+          <Dd data-testid="batch-logic-summary">{batch.ruleExplanation.logicSummary}</Dd>
+          <Dt>确认状态</Dt>
+          <Dd>
             <StatusText>
               {historical
                 ? confirmation?.status === 'confirmed'
@@ -101,31 +103,33 @@ export function RecognitionBatchPage() {
                   ? '0 命中，不出现待确认'
                   : '待确认（全院）'}
             </StatusText>
-          </dd>
-          <dt>原始命中</dt>
-          <dd>{originalIds.length}</dd>
-          <dt>待确认保留</dt>
-          <dd data-testid="retained-count">{retainedIds.length}</dd>
-        </dl>
+          </Dd>
+          <Dt>原始命中</Dt>
+          <Dd>{originalIds.length}</Dd>
+          <Dt>待确认保留</Dt>
+          <Dd data-testid="retained-count">{retainedIds.length}</Dd>
+        </DescriptionList>
         {snapshotId ? (
-          <p>
-            已生成快照 <Link to={cohortDetailPath(snapshotId)}>{snapshotId}</Link>
+          <p className="mt-3 text-sm">
+            已生成快照{' '}
+            <Link className="text-primary hover:underline" to={cohortDetailPath(snapshotId)}>
+              {snapshotId}
+            </Link>
           </p>
         ) : null}
         {reviewable && canConfirm ? (
-          <div className="toolbar-actions">
-            <button type="button" className="btn-primary" data-testid="confirm-batch" onClick={confirm}>
+          <Toolbar className="mt-4">
+            <Button type="button" data-testid="confirm-batch" onClick={confirm}>
               确认保留为快照
-            </button>
-            <p className="muted">全移除则不生成空快照，只留零人确认记录。</p>
-          </div>
+            </Button>
+            <Muted className="m-0">全移除则不生成空快照，只留零人确认记录。</Muted>
+          </Toolbar>
         ) : null}
-        {historical ? <p className="muted">历史批次只读，无移除／确认。</p> : null}
-      </div>
+        {historical ? <Muted className="mt-3">历史批次只读，无移除／确认。</Muted> : null}
+      </Panel>
 
-      <div className="review-layout">
-        <div className="panel">
-          <h3>命中清单</h3>
+      <div className="grid gap-4 xl:grid-cols-[minmax(280px,2fr)_minmax(320px,3fr)]">
+        <Panel title="命中清单">
           <MemberTable
             state={state}
             patientIds={originalIds}
@@ -135,11 +139,13 @@ export function RecognitionBatchPage() {
             trailing={(patientId) => {
               const patient = patientById(state, patientId)
               return (
-                <Link to={patientPath(patientId, from)}>{patient ? '完整画像' : '打开'}</Link>
+                <Link className="text-primary hover:underline" to={patientPath(patientId, from)}>
+                  {patient ? '完整画像' : '打开'}
+                </Link>
               )
             }}
           />
-        </div>
+        </Panel>
         <div>
           {selectedId ? (
             <PatientEvidencePanel
@@ -152,10 +158,11 @@ export function RecognitionBatchPage() {
               onRemove={(reason, note) => remove(selectedId, reason, note)}
             />
           ) : (
-            <p className="empty">无命中患者。</p>
+            <EmptyHint>无命中患者。</EmptyHint>
           )}
         </div>
       </div>
+      </PageStack>
     </section>
   )
 }

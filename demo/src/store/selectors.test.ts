@@ -28,11 +28,13 @@ describe('workbenchStats', () => {
   it('待确认人数随命中对象变化，而不是页面预写', () => {
     const state = createInitialState()
     const original = workbenchStats(state)
-    const remainingHits = state.hits.slice(1)
-    const mutated = { ...state, hits: remainingHits }
+    const pendingHits = pendingRecognitionBatches(state).flatMap((batch) => hitsOfBatch(state, batch.id))
+    const remainingPending = pendingHits.slice(1)
+    const otherHits = state.hits.filter((hit) => !pendingHits.some((item) => item.id === hit.id))
+    const mutated = { ...state, hits: [...otherHits, ...remainingPending] }
     const next = workbenchStats(mutated)
 
-    expect(next.pendingRecognitionPatients).toBe(uniquePatientIds(remainingHits).length)
+    expect(next.pendingRecognitionPatients).toBe(uniquePatientIds(remainingPending).length)
     expect(next.pendingRecognitionPatients).not.toBe(original.pendingRecognitionPatients)
   })
 

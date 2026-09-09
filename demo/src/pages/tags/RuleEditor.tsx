@@ -25,6 +25,7 @@ import {
   updateNode,
   wrapIfNeeded,
 } from '../../engine/logicTree'
+import { Button, Panel, Toolbar } from '../../ui/kit'
 
 const JUDGMENT_LABEL: Record<JudgmentType, string> = {
   direct_compare: '直接比较',
@@ -80,36 +81,35 @@ export function RuleEditor({
   }
 
   return (
-    <div className="rule-layout">
-      <div className="panel">
-        <div className="toolbar">
-          <strong>逻辑树</strong>
-          {!readOnly ? (
-            <div className="toolbar-actions">
-              <button type="button" className="btn-ghost" onClick={() => add('condition')}>
+    <div className="mt-1 grid gap-4 lg:grid-cols-2">
+      <Panel
+        title="逻辑树"
+        action={
+          !readOnly ? (
+            <Toolbar className="mb-0">
+              <Button type="button" variant="outline" size="sm" onClick={() => add('condition')}>
                 添加条件
-              </button>
-              <button type="button" className="btn-ghost" onClick={() => add('group')}>
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => add('group')}>
                 添加分组
-              </button>
-              <button type="button" className="btn-ghost" onClick={() => add('record_group')}>
+              </Button>
+              <Button type="button" variant="outline" size="sm" onClick={() => add('record_group')}>
                 添加记录条件组
-              </button>
+              </Button>
               {tagType === 'composite' ? (
-                <button type="button" className="btn-ghost" onClick={() => add('tag_ref')} disabled={publishedBasic(state).length === 0}>
+                <Button type="button" variant="outline" size="sm" onClick={() => add('tag_ref')} disabled={publishedBasic(state).length === 0}>
                   引用基础标签
-                </button>
+                </Button>
               ) : null}
-            </div>
-          ) : null}
-        </div>
-        <ul className="rule-tree">
+            </Toolbar>
+          ) : null
+        }
+      >
+        <ul className="space-y-1">
           <TreeItem node={logic} state={state} selectedId={selected.id} onSelect={onSelect} />
         </ul>
-      </div>
-      <div className="panel">
-        <strong>参数</strong>
-        <p className="muted">选值后即时更新左侧摘要。保存后重开须与当前值一致。</p>
+      </Panel>
+      <Panel title="参数" description="选值后即时更新左侧摘要。保存后重开须与当前值一致。">
         {selected.kind === 'condition' ? (
           <ConditionParams
             state={state}
@@ -152,7 +152,7 @@ export function RuleEditor({
             }}
           />
         ) : null}
-      </div>
+      </Panel>
     </div>
   )
 }
@@ -176,14 +176,18 @@ function TreeItem({
     <li>
       <button
         type="button"
-        className={node.id === selectedId ? 'tree-node is-selected' : 'tree-node'}
+        className={
+          node.id === selectedId
+            ? 'bg-accent text-accent-foreground flex w-full flex-col items-start gap-0.5 rounded-lg border border-primary/30 px-2.5 py-2 text-left text-sm'
+            : 'hover:bg-muted/70 flex w-full flex-col items-start gap-0.5 rounded-lg border border-transparent px-2.5 py-2 text-left text-sm'
+        }
         onClick={() => onSelect(node.id)}
       >
-        <span className="muted">{kindLabel(node)}</span>
+        <span className="text-muted-foreground text-xs">{kindLabel(node)}</span>
         <span>{summarizeLogic(state, node)}</span>
       </button>
       {node.kind === 'group' || node.kind === 'record_group' ? (
-        <ul className="rule-tree">
+        <ul className="mt-1 space-y-1 border-l pl-3">
           {node.children.map((child) => (
             <TreeItem key={child.id} node={child} state={state} selectedId={selectedId} onSelect={onSelect} />
           ))}
@@ -214,7 +218,7 @@ function ConditionParams({
   const metric = state.metrics.find((item) => item.id === node.metricId)
   const metrics = state.metrics.filter((item) => item.status === 'active' || item.id === node.metricId)
   return (
-    <div className="form-stack">
+    <div className="grid gap-3">
       <label>
         指标
         <select
@@ -405,7 +409,7 @@ function CompareFields({
         </select>
       </label>
       {op === 'between' ? (
-        <div className="split-fields">
+        <div className="grid grid-cols-2 gap-2">
           <label>
             起点
             <input
@@ -514,7 +518,7 @@ function WindowFields({
   onChange: (window: TimeWindow) => void
 }) {
   return (
-    <div className="form-stack">
+    <div className="grid gap-3">
       <label>
         时间窗口
         <select
@@ -540,7 +544,7 @@ function WindowFields({
           <option value="event">事件前后</option>
         </select>
       </label>
-      <p className="muted">{windowLabel(window)}</p>
+      <p className="text-muted-foreground text-xs">{windowLabel(window)}</p>
       {window.kind === 'relative_days' ? (
         <label>
           天数
@@ -554,7 +558,7 @@ function WindowFields({
         </label>
       ) : null}
       {window.kind === 'fixed' ? (
-        <div className="split-fields">
+        <div className="grid grid-cols-2 gap-2">
           <label>
             开始
             <input
@@ -607,7 +611,7 @@ function WindowFields({
               <option value="any">任一次</option>
             </select>
           </label>
-          <div className="split-fields">
+          <div className="grid grid-cols-2 gap-2">
             <label>
               前偏移天
               <input
@@ -647,7 +651,7 @@ function GroupParams({
   onRemove: () => void
 }) {
   return (
-    <div className="form-stack">
+    <div className="grid gap-3">
       <label>
         组合
         <select
@@ -669,9 +673,9 @@ function GroupParams({
         同次就诊限定
       </label>
       {!readOnly ? (
-        <button type="button" className="btn-ghost" onClick={onRemove}>
+        <Button type="button" variant="outline" size="sm" onClick={onRemove}>
           删除该组
-        </button>
+        </Button>
       ) : null}
     </div>
   )
@@ -689,7 +693,7 @@ function RecordGroupParams({
   onRemove: () => void
 }) {
   return (
-    <div className="form-stack">
+    <div className="grid gap-3">
       <label>
         观察粒度
         <select
@@ -754,9 +758,9 @@ function RecordGroupParams({
         }}
       />
       {!readOnly ? (
-        <button type="button" className="btn-ghost" onClick={onRemove}>
+        <Button type="button" variant="outline" size="sm" onClick={onRemove}>
           删除记录条件组
-        </button>
+        </Button>
       ) : null}
     </div>
   )
@@ -778,7 +782,7 @@ function TagRefParams({
   const options = publishedBasic(state)
   const ref = state.tags.find((item) => item.id === node.tagId)
   return (
-    <div className="form-stack">
+    <div className="grid gap-3">
       <label>
         已发布基础标签
         <select
@@ -798,12 +802,12 @@ function TagRefParams({
           只读展开当前逻辑：{summarizeLogic(state, ref.logic)}
         </p>
       ) : (
-        <p className="muted">未找到引用标签</p>
+        <p className="text-muted-foreground text-xs">未找到引用标签</p>
       )}
       {!readOnly ? (
-        <button type="button" className="btn-ghost" onClick={onRemove}>
+        <Button type="button" variant="outline" size="sm" onClick={onRemove}>
           删除引用
-        </button>
+        </Button>
       ) : null}
     </div>
   )

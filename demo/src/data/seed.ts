@@ -18,8 +18,10 @@ import {
   SYS_LEGACY_ID,
   SYS_PATIENT_ID,
   TAG_ADULT_ID,
+  TAG_DRY_CANDIDATE_ID,
   TAG_EYE_HIGH_ID,
   TAG_EYE_OP_ID,
+  TAG_LEGACY_FOLLOW_ID,
 } from '../domain/ids'
 import type {
   AppState,
@@ -39,6 +41,7 @@ import type {
   RuleLogic,
   Tag,
 } from '../domain/types'
+import { seedDemoCatalog } from './demoCatalog'
 import { createDictionaries } from './dictionaries'
 import { createRuleSamples } from './ruleSamples'
 
@@ -444,11 +447,54 @@ function createTags(): Tag[] {
       responsibleOrgId: ORG_INFO_ID,
       autoRecognitionEnabled: true,
       autoRecognitionIntervalDays: 7,
+      suggestion: '建议纳入眼科复诊随访，由随访组评估是否需要加号。非医嘱。',
       logic: eyeOpLogic(),
       createdBy: DEMO_OPERATOR_ID,
       createdAt: stamp,
       updatedBy: DEMO_OPERATOR_ID,
       updatedAt: stamp,
+    },
+    {
+      id: TAG_DRY_CANDIDATE_ID,
+      name: '干眼随访候选',
+      type: 'basic',
+      category: '评估结果',
+      status: 'draft',
+      responsibleOrgId: ORG_INFO_ID,
+      autoRecognitionEnabled: false,
+      logic: {
+        kind: 'condition',
+        id: 'cond-dry-latest',
+        metricId: MET_EYE_SCORE_ID,
+        judgment: {
+          type: 'latest',
+          window: { kind: 'relative_days', days: 90 },
+          op: 'gte',
+          value: 8,
+        },
+      },
+      createdBy: DEMO_OPERATOR_ID,
+      createdAt: shanghaiIso('2026-09-06', '16:00:00'),
+      updatedBy: DEMO_OPERATOR_ID,
+      updatedAt: shanghaiIso('2026-09-06', '16:00:00'),
+    },
+    {
+      id: TAG_LEGACY_FOLLOW_ID,
+      name: '旧版随访筛查',
+      type: 'composite',
+      category: '组合筛选',
+      status: 'manually_disabled',
+      responsibleOrgId: ORG_INFO_ID,
+      autoRecognitionEnabled: false,
+      logic: {
+        kind: 'tag_ref',
+        id: 'ref-legacy-adult',
+        tagId: TAG_ADULT_ID,
+      },
+      createdBy: DEMO_OPERATOR_ID,
+      createdAt: shanghaiIso('2026-08-01', '09:00:00'),
+      updatedBy: DEMO_OPERATOR_ID,
+      updatedAt: shanghaiIso('2026-08-24', '16:00:00'),
     },
   ]
 }
@@ -615,7 +661,7 @@ export function createInitialState(): AppState {
     encounterId: encounter.id,
   }))
 
-  return {
+  const base: AppState = {
     clock: DEFAULT_DEMO_CLOCK,
     currentScopeId: SCOPE_HOSPITAL_ID,
     operatorId: DEMO_OPERATOR_ID,
@@ -644,4 +690,6 @@ export function createInitialState(): AppState {
     },
     retiredIds: [],
   }
+
+  return seedDemoCatalog(base)
 }

@@ -14,6 +14,28 @@ import {
   tagById,
 } from '../../store/selectors'
 import { PhoneNote, StatusText } from '../../ui/PageHeader'
+import {
+  Button,
+  Dd,
+  DescriptionList,
+  Dt,
+  EmptyHint,
+  FormField,
+  FormStack,
+  FullSelect,
+  Muted,
+  Notice,
+  PageStack,
+  Panel,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../ui/kit'
+import { Input } from '@/components/ui/input'
+import { NativeSelectOption } from '@/components/ui/native-select'
 
 const REMOVE_REASONS: Array<{ code: RemoveReasonCode; label: string }> = [
   { code: 'not_satisfy', label: '当前已不满足' },
@@ -59,64 +81,61 @@ export function PatientEvidencePanel({
   const timeline = buildTimeline(hit?.slots ?? [], currentScore)
 
   return (
-    <div className="stack" data-testid="patient-evidence">
+    <PageStack data-testid="patient-evidence">
       {sourceLabel}
-      <div className="panel">
-        <h3>身份与就诊</h3>
-        <dl className="dl">
-          <dt>姓名</dt>
-          <dd>{patient.name}</dd>
-          <dt>主患者标识</dt>
-          <dd>{patient.id}</dd>
-          <dt>性别</dt>
-          <dd>{patient.sex}</dd>
-          <dt>年龄</dt>
-          <dd>{patient.age}</dd>
-          <dt>就诊标识</dt>
-          <dd>{encounter?.id ?? '—'}</dd>
-          <dt>就诊科室</dt>
-          <dd>{encounter?.department ?? '—'}</dd>
-          <dt>联系电话</dt>
-          <dd>{patient.phone ?? '空'}</dd>
-        </dl>
+      <Panel title="身份与就诊">
+        <DescriptionList>
+          <Dt>姓名</Dt>
+          <Dd>{patient.name}</Dd>
+          <Dt>主患者标识</Dt>
+          <Dd>{patient.id}</Dd>
+          <Dt>性别</Dt>
+          <Dd>{patient.sex}</Dd>
+          <Dt>年龄</Dt>
+          <Dd>{patient.age}</Dd>
+          <Dt>就诊标识</Dt>
+          <Dd>{encounter?.id ?? '—'}</Dd>
+          <Dt>就诊科室</Dt>
+          <Dd>{encounter?.department ?? '—'}</Dd>
+          <Dt>联系电话</Dt>
+          <Dd>{patient.phone ?? '空'}</Dd>
+        </DescriptionList>
         <PhoneNote />
-      </div>
+      </Panel>
 
       {showNotSatisfy && status && showsCurrentNotSatisfy(status) ? (
-        <div className="notice notice-warn" role="status" data-testid="current-not-satisfy">
+        <Notice tone="warn" role="status" data-testid="current-not-satisfy">
           当前已不满足。仅作提示，不自动移除，也不阻止确认。触发时证据仍保留。
-        </div>
+        </Notice>
       ) : null}
       {showNotSatisfy ? (
-        <p className="muted">未提示「当前已不满足」不表示已验证仍满足。失败或无法判断不会提示为不满足。</p>
+        <Muted>未提示「当前已不满足」不表示已验证仍满足。失败或无法判断不会提示为不满足。</Muted>
       ) : null}
 
       {sourceTag ? (
-        <div className="panel">
-          <h3>来源条件</h3>
+        <Panel title="来源条件">
           <p>{sourceTag.status === 'deleted' ? `${sourceTag.name}（已删除标签）` : sourceTag.name}</p>
-          <p className="muted">稳定标识 {sourceTag.id}</p>
-        </div>
+          <Muted className="mt-1">稳定标识 {sourceTag.id}</Muted>
+        </Panel>
       ) : null}
 
-      <div className="panel">
-        <h3>触发时证据</h3>
+      <Panel title="触发时证据">
         {triggerScore ? (
           <p>
             触发时眼表评分 <strong data-testid="trigger-score">{String(triggerScore.value)}</strong>
-            <span className="muted"> · 业务时间 {formatDateTime(triggerScore.businessTime)}</span>
+            <span className="text-muted-foreground text-xs"> · 业务时间 {formatDateTime(triggerScore.businessTime)}</span>
           </p>
         ) : null}
         {currentScore ? (
           <p>
             当前眼表评分 <strong data-testid="current-score">{String(currentScore.value)}</strong>
-            <span className="muted"> · 业务时间 {formatDateTime(currentScore.businessTime)}</span>
+            <span className="text-muted-foreground text-xs"> · 业务时间 {formatDateTime(currentScore.businessTime)}</span>
           </p>
         ) : (
-          <p className="muted">当前无可用眼表评分。</p>
+          <Muted>当前无可用眼表评分。</Muted>
         )}
         {hit?.slots.length ? (
-          <ul>
+          <ul className="mt-2 space-y-1 text-sm">
             {hit.slots.map((slot) => (
               <li key={`${slot.role}-${slot.observationId ?? slot.encounterId ?? slot.metricId}`}>
                 {slot.role}：{String(slot.value)} · {formatDateTime(slot.businessTime)}
@@ -126,96 +145,85 @@ export function PatientEvidencePanel({
             ))}
           </ul>
         ) : (
-          <p className="muted">无保存的触发时证据槽位。</p>
+          <Muted>无保存的触发时证据槽位。</Muted>
         )}
-      </div>
+      </Panel>
 
-      <div className="panel">
-        <h3>证据时间轴</h3>
-        <p className="muted">按业务时间，不展示全量病历。</p>
+      <Panel title="证据时间轴" description="按业务时间，不展示全量病历。">
         {timeline.length === 0 ? (
-          <p className="empty">无相关证据。</p>
+          <EmptyHint>无相关证据。</EmptyHint>
         ) : (
-          <ol className="timeline">
+          <ol className="relative ml-2 space-y-3 border-l pl-4">
             {timeline.map((item) => (
-              <li key={item.key}>
+              <li key={item.key} className="text-sm">
+                <span className="bg-primary absolute -left-[5px] mt-1.5 size-2.5 rounded-full" />
                 {formatDateTime(item.businessTime)} · {item.label}：{String(item.value)}
               </li>
             ))}
           </ol>
         )}
-      </div>
+      </Panel>
 
       {sourceTag?.type === 'composite' ? (
-        <div className="panel">
-          <h3>复合证据</h3>
-          <button type="button" className="btn-ghost" onClick={() => setExpanded((value) => !value)}>
+        <Panel title="复合证据">
+          <Button type="button" variant="outline" size="sm" onClick={() => setExpanded((value) => !value)}>
             {expanded ? '收起基础逻辑贡献' : '展开基础逻辑贡献'}
-          </button>
+          </Button>
           {expanded ? (
-            <ul data-testid="composite-contributions">
+            <ul className="mt-3 space-y-1 text-sm" data-testid="composite-contributions">
               {referencedBasicTags(state, sourceTag).map((basic) => {
                 const result = evaluateTag(state, basic, hit?.computedAt ?? state.clock, patientId)
                 const authorized = isTagAuthorized(state, basic.id)
                 return (
                   <li key={basic.id}>
                     {basic.name}：{isBlocked(result) ? result.reason : result}
-                    {authorized ? null : <span className="muted">（未授权，不能跳转独立命中清单）</span>}
+                    {authorized ? null : <span className="text-muted-foreground">（未授权，不能跳转独立命中清单）</span>}
                   </li>
                 )
               })}
             </ul>
           ) : null}
-          <p className="muted">复合授权不沿引用扩大白名单，此处不提供基础标签命中清单入口。</p>
-        </div>
+          <Muted className="mt-2">复合授权不沿引用扩大白名单，此处不提供基础标签命中清单入口。</Muted>
+        </Panel>
       ) : null}
 
-      <div className="panel">
-        <h3>其他获授权标签</h3>
+      <Panel title="其他获授权标签">
         {authorizedOthers.length === 0 ? (
-          <p className="empty">无其他获授权且当前命中的标签。</p>
+          <EmptyHint>无其他获授权且当前命中的标签。</EmptyHint>
         ) : (
-          <ul>
+          <ul className="space-y-1 text-sm">
             {authorizedOthers.map((tag) => (
               <li key={tag.id}>{tag.name}</li>
             ))}
           </ul>
         )}
-      </div>
+      </Panel>
 
       {reviewable && !hideReviewActions && onRemove ? (
-        <div className="panel">
-          <h3>复核</h3>
-          <div className="form-stack">
-            <label>
-              移除原因
-              <select value={reasonCode} onChange={(event) => setReasonCode(event.target.value as RemoveReasonCode)}>
+        <Panel title="复核">
+          <FormStack>
+            <FormField label="移除原因">
+              <FullSelect value={reasonCode} onChange={(event) => setReasonCode(event.target.value as RemoveReasonCode)}>
                 {REMOVE_REASONS.map((item) => (
-                  <option key={item.code} value={item.code}>
+                  <NativeSelectOption key={item.code} value={item.code}>
                     {item.label}
-                  </option>
+                  </NativeSelectOption>
                 ))}
-              </select>
-            </label>
+              </FullSelect>
+            </FormField>
             {reasonCode === 'other' ? (
-              <label>
-                说明
-                <input value={note} onChange={(event) => setNote(event.target.value)} />
-              </label>
+              <FormField label="说明">
+                <Input value={note} onChange={(event) => setNote(event.target.value)} />
+              </FormField>
             ) : null}
-            <button
-              type="button"
-              className="btn-danger"
-              data-testid="remove-patient"
-              onClick={() => onRemove(reasonCode, note)}
-            >
+            <Button type="button" variant="destructive" data-testid="remove-patient" onClick={() => onRemove(reasonCode, note)}>
               移除该患者
-            </button>
-          </div>
-          <p className="muted">不能添加患者。原始命中说明保留。</p>
-        </div>
+            </Button>
+          </FormStack>
+          <Muted className="mt-2">不能添加患者。原始命中说明保留。</Muted>
+        </Panel>
       ) : null}
-    </div>
+    </PageStack>
   )
 }
 
@@ -236,45 +244,44 @@ export function MemberTable({
 }) {
   const removed = new Set(removedIds ?? [])
   return (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>患者</th>
-            <th>标识</th>
-            <th>性别</th>
-            <th>年龄</th>
-            <th>状态</th>
-            {trailing ? <th></th> : null}
-          </tr>
-        </thead>
-        <tbody>
-          {patientIds.map((patientId) => {
-            const patient = patientById(state, patientId)
-            return (
-              <tr
-                key={patientId}
-                className={selectedId === patientId ? 'member-row is-selected' : 'member-row'}
-                data-testid={`member-${patientId}`}
-              >
-                <td>
-                  <button type="button" className="linkish" onClick={() => onSelect(patientId)}>
-                    {patient?.name ?? patientId}
-                  </button>
-                </td>
-                <td>{patientId}</td>
-                <td>{patient?.sex ?? '—'}</td>
-                <td>{patient?.age ?? '—'}</td>
-                <td>
-                  {removed.has(patientId) ? <StatusText>已移除</StatusText> : <StatusText>保留</StatusText>}
-                </td>
-                {trailing ? <td>{trailing(patientId)}</td> : null}
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>患者</TableHead>
+          <TableHead>标识</TableHead>
+          <TableHead>性别</TableHead>
+          <TableHead>年龄</TableHead>
+          <TableHead>状态</TableHead>
+          {trailing ? <TableHead></TableHead> : null}
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {patientIds.map((patientId) => {
+          const patient = patientById(state, patientId)
+          return (
+            <TableRow
+              key={patientId}
+              data-state={selectedId === patientId ? 'selected' : undefined}
+              className="member-row"
+              data-testid={`member-${patientId}`}
+            >
+              <TableCell>
+                <Button type="button" variant="link" className="h-auto px-0" onClick={() => onSelect(patientId)}>
+                  {patient?.name ?? patientId}
+                </Button>
+              </TableCell>
+              <TableCell>{patientId}</TableCell>
+              <TableCell>{patient?.sex ?? '—'}</TableCell>
+              <TableCell>{patient?.age ?? '—'}</TableCell>
+              <TableCell>
+                {removed.has(patientId) ? <StatusText>已移除</StatusText> : <StatusText>保留</StatusText>}
+              </TableCell>
+              {trailing ? <TableCell>{trailing(patientId)}</TableCell> : null}
+            </TableRow>
+          )
+        })}
+      </TableBody>
+    </Table>
   )
 }
 

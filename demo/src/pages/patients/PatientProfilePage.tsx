@@ -65,19 +65,19 @@ export function PatientProfilePage() {
           onRemove={reviewable ? remove : undefined}
           sourceLabel={
             crowd ? (
-              <div className="panel">
-                <h3>来源人群</h3>
+              <div className="bg-card ring-foreground/10 rounded-xl p-4 text-sm ring-1">
+                <h3 className="mb-1 font-medium">来源人群</h3>
                 <p>{crowd.name}</p>
-                <p className="muted">
+                <p className="text-muted-foreground mt-1 text-xs">
                   {crowd.kind === 'dynamic'
                     ? cohortConditionText(state, crowd.includeTagIds, crowd.excludeTagIds)
                     : crowd.ruleExplanation?.logicSummary ?? crowd.sourceType}
                 </p>
-                <p className="muted">从人群进入为只读，无复核按钮。</p>
+                <p className="text-muted-foreground mt-1 text-xs">从人群进入为只读，无复核按钮。</p>
               </div>
             ) : recognition ? (
-              <div className="panel">
-                <h3>来源识别批次</h3>
+              <div className="bg-card ring-foreground/10 rounded-xl p-4 text-sm ring-1">
+                <h3 className="mb-1 font-medium">来源识别批次</h3>
                 <p>
                   {recognition.tag?.name ?? recognition.batch.tagId} · {recognition.batch.id}
                 </p>

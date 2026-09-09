@@ -105,7 +105,7 @@ describe('阶段3 识别复核', () => {
     expect(zero.ok).toBe(true)
     if (!zero.ok) return
     expect(zero.snapshotId).toBeNull()
-    expect(zero.state.snapshots).toHaveLength(0)
+    expect(zero.state.snapshots).toHaveLength(allRemoved.snapshots.length)
     const confirmation = zero.state.batches.find((item) => item.id === BATCH_INITIAL_ID)?.scopeConfirmations[zero.state.currentScopeId]
     expect(confirmation?.status).toBe('confirmed')
     expect(confirmation?.zeroRetention).toBe(true)
@@ -124,7 +124,7 @@ describe('阶段3 识别复核', () => {
     expect(failed.ok).toBe(false)
     if (failed.ok) return
     expect(failed.reason).toMatch(/失败/)
-    expect(state.batches).toHaveLength(1)
+    expect(state.batches.some((item) => item.id === BATCH_INITIAL_ID)).toBe(true)
 
     const generated = generateAutoRecognitionBatch(state, TAG_EYE_OP_ID)
     expect(generated.ok).toBe(true)

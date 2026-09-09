@@ -4,6 +4,8 @@ import { DS_ENCOUNTER_ID, DS_EYE_ASSESSMENT_ID, DS_PATIENT_ID } from '../../doma
 import type { Dataset } from '../../domain/types'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { PageHeader, PhoneNote } from '../../ui/PageHeader'
+import { Dd, DescriptionList, Dt, Muted, PageStack, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/kit'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function DatasetsPage() {
   const { state } = useDemoStore()
@@ -16,21 +18,24 @@ export function DatasetsPage() {
         title="数据集"
         description="后台导入的预置数据对象，只供查看和选择，不提供新增、修改、删除或停用。"
       />
-      <div className="tabs" role="tablist" aria-label="预置数据集">
-        {state.datasets.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            role="tab"
-            aria-selected={item.id === dataset?.id}
-            className={item.id === dataset?.id ? 'tab is-active' : 'tab'}
-            onClick={() => setSelectedId(item.id)}
-          >
-            {item.name}
-          </button>
-        ))}
-      </div>
-      {dataset ? <DatasetPanel dataset={dataset} /> : <p>无预置数据集。</p>}
+      {state.datasets.length > 0 ? (
+        <Tabs value={dataset?.id} onValueChange={setSelectedId} className="gap-4">
+          <TabsList aria-label="预置数据集">
+            {state.datasets.map((item) => (
+              <TabsTrigger key={item.id} value={item.id}>
+                {item.name}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+          {state.datasets.map((item) => (
+            <TabsContent key={item.id} value={item.id}>
+              <DatasetPanel dataset={item} />
+            </TabsContent>
+          ))}
+        </Tabs>
+      ) : (
+        <p>无预置数据集。</p>
+      )}
     </section>
   )
 }
@@ -79,79 +84,73 @@ function DatasetPanel({ dataset }: { dataset: Dataset }) {
   }, [dataset.id, state])
 
   return (
-    <div className="stack">
-      <div className="panel">
-        <dl className="dl">
-          <dt>名称</dt>
-          <dd>{dataset.name}</dd>
-          <dt>来源</dt>
-          <dd>{dataset.source}</dd>
-          <dt>表名</dt>
-          <dd>{dataset.tableName}</dd>
-          <dt>粒度</dt>
-          <dd>{dataset.grain}</dd>
-          <dt>患者关联</dt>
-          <dd>{dataset.associations.patient}</dd>
-          <dt>就诊关联</dt>
-          <dd>{dataset.associations.encounter ?? '无'}</dd>
-          <dt>记录关联</dt>
-          <dd>{dataset.associations.record}</dd>
-          <dt>时间关联</dt>
-          <dd>{dataset.associations.time ?? '无（患者主数据）'}</dd>
-        </dl>
-      </div>
-      <div className="panel">
-        <h3>字段</h3>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>字段</th>
-                <th>名称</th>
-                <th>类型</th>
-                <th>说明</th>
-              </tr>
-            </thead>
-            <tbody>
-              {dataset.fields.map((field) => (
-                <tr key={field.name}>
-                  <td>{field.name}</td>
-                  <td>{field.label}</td>
-                  <td>{field.valueType}</td>
-                  <td>{field.description}</td>
-                </tr>
+    <PageStack>
+      <Panel>
+        <DescriptionList>
+          <Dt>名称</Dt>
+          <Dd>{dataset.name}</Dd>
+          <Dt>来源</Dt>
+          <Dd>{dataset.source}</Dd>
+          <Dt>表名</Dt>
+          <Dd>{dataset.tableName}</Dd>
+          <Dt>粒度</Dt>
+          <Dd>{dataset.grain}</Dd>
+          <Dt>患者关联</Dt>
+          <Dd>{dataset.associations.patient}</Dd>
+          <Dt>就诊关联</Dt>
+          <Dd>{dataset.associations.encounter ?? '无'}</Dd>
+          <Dt>记录关联</Dt>
+          <Dd>{dataset.associations.record}</Dd>
+          <Dt>时间关联</Dt>
+          <Dd>{dataset.associations.time ?? '无（患者主数据）'}</Dd>
+        </DescriptionList>
+      </Panel>
+      <Panel title="字段">
+        <Table className="[&_td]:whitespace-normal">
+          <TableHeader>
+            <TableRow>
+              <TableHead>字段</TableHead>
+              <TableHead>名称</TableHead>
+              <TableHead>类型</TableHead>
+              <TableHead>说明</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {dataset.fields.map((field) => (
+              <TableRow key={field.name}>
+                <TableCell>{field.name}</TableCell>
+                <TableCell>{field.label}</TableCell>
+                <TableCell>{field.valueType}</TableCell>
+                <TableCell>{field.description}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </Panel>
+      <Panel title="样例">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              {samples.columns.map((column) => (
+                <TableHead key={column}>{column}</TableHead>
               ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      <div className="panel">
-        <h3>样例</h3>
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                {samples.columns.map((column) => (
-                  <th key={column}>{column}</th>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {samples.rows.map((row, index) => (
+              <TableRow key={`${dataset.id}-${index}`}>
+                {row.map((cell, cellIndex) => (
+                  <TableCell key={`${dataset.id}-${index}-${cellIndex}`}>{cell === '' ? '空' : cell}</TableCell>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {samples.rows.map((row, index) => (
-                <tr key={`${dataset.id}-${index}`}>
-                  {row.map((cell, cellIndex) => (
-                    <td key={`${dataset.id}-${index}-${cellIndex}`}>{cell === '' ? '空' : cell}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
         {dataset.id === DS_PATIENT_ID ? <PhoneNote /> : null}
         {dataset.id === DS_EYE_ASSESSMENT_ID ? (
-          <p className="phone-note">symptom 属于 ts_eye_assessment，与 observation_id 关联。</p>
+          <Muted className="mt-2">symptom 属于 ts_eye_assessment，与 observation_id 关联。</Muted>
         ) : null}
-      </div>
-    </div>
+      </Panel>
+    </PageStack>
   )
 }

@@ -22,10 +22,14 @@ describe('createInitialState', () => {
       [TAG_ADULT_ID, TAG_EYE_HIGH_ID, TAG_EYE_OP_ID].sort(),
     )
     expect(published).toHaveLength(state.tags.filter((tag) => tag.status === 'published').length)
-    expect(state.batches).toHaveLength(1)
-    expect(initialBatch?.tagId).toBe(
-      state.tags.find((tag) => tag.autoRecognitionEnabled)?.id,
-    )
+    expect(state.batches.some((item) => item.id === BATCH_INITIAL_ID)).toBe(true)
+    expect(initialBatch?.tagId).toBe(TAG_EYE_OP_ID)
+    expect(initialBatch?.scopeConfirmations[state.currentScopeId]?.status).toBe('pending')
+    expect(state.dynamicCohorts.length).toBeGreaterThan(0)
+    expect(state.snapshots.length).toBeGreaterThan(0)
+    expect(state.openConfigs.length).toBeGreaterThan(0)
+    expect(state.tags.some((tag) => tag.status === 'draft')).toBe(true)
+    expect(state.tags.some((tag) => tag.status === 'manually_disabled')).toBe(true)
     expect(hits.map((hit) => hit.patientId)).toEqual([...INITIAL_HIT_PATIENT_IDS])
     expect(uniquePatientIds(hits)).toEqual([...INITIAL_HIT_PATIENT_IDS])
     expect(hits).toHaveLength(INITIAL_HIT_PATIENT_IDS.length)

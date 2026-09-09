@@ -4,6 +4,22 @@ import type { OpenConfigStatus, OpenConfigType } from '../../domain/types'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { displayOpenName, openRuntime, openStatusLabel, openTypeLabel } from '../../store/open'
 import { PageHeader, StatusText } from '../../ui/PageHeader'
+import {
+  Button,
+  EmptyHint,
+  FilterField,
+  FullSelect,
+  Muted,
+  Panel,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Toolbar,
+} from '../../ui/kit'
+import { NativeSelectOption } from '@/components/ui/native-select'
 
 export function OpenListPage() {
   const { state } = useDemoStore()
@@ -33,80 +49,75 @@ export function OpenListPage() {
         description="数据集交付与标签订阅共用列表。无审批。"
         extra={
           canCreate ? (
-            <Link className="btn-primary" to={ROUTES.openNew}>
-              新建开放配置
-            </Link>
+            <Button nativeButton={false} render={<Link to={ROUTES.openNew} />}>新建开放配置</Button>
           ) : null
         }
       />
-      <div className="panel">
-        <div className="filters">
-          <label>
-            类型
-            <select value={typeFilter} onChange={(event) => setFilter('type', event.target.value)} data-testid="open-type-filter">
-              <option value="all">全部</option>
-              <option value="dataset_delivery">数据集交付</option>
-              <option value="tag_subscription">标签订阅</option>
-            </select>
-          </label>
-          <label>
-            状态
-            <select value={statusFilter} onChange={(event) => setFilter('status', event.target.value)} data-testid="open-status-filter">
-              <option value="all">全部</option>
-              <option value="draft">草稿</option>
-              <option value="enabled">授权已启用</option>
-              <option value="paused">已暂停</option>
-              <option value="expired">已到期</option>
-            </select>
-          </label>
-        </div>
-        <p className="muted">「授权已启用」只表示授权生效，不表示对方已查询、接收或使用数据。</p>
+      <Panel>
+        <Toolbar className="mb-3">
+          <FilterField label="类型">
+            <FullSelect value={typeFilter} onChange={(event) => setFilter('type', event.target.value)} data-testid="open-type-filter">
+              <NativeSelectOption value="all">全部</NativeSelectOption>
+              <NativeSelectOption value="dataset_delivery">数据集交付</NativeSelectOption>
+              <NativeSelectOption value="tag_subscription">标签订阅</NativeSelectOption>
+            </FullSelect>
+          </FilterField>
+          <FilterField label="状态">
+            <FullSelect value={statusFilter} onChange={(event) => setFilter('status', event.target.value)} data-testid="open-status-filter">
+              <NativeSelectOption value="all">全部</NativeSelectOption>
+              <NativeSelectOption value="draft">草稿</NativeSelectOption>
+              <NativeSelectOption value="enabled">授权已启用</NativeSelectOption>
+              <NativeSelectOption value="paused">已暂停</NativeSelectOption>
+              <NativeSelectOption value="expired">已到期</NativeSelectOption>
+            </FullSelect>
+          </FilterField>
+        </Toolbar>
+        <Muted className="mb-3">「授权已启用」只表示授权生效，不表示对方已查询、接收或使用数据。</Muted>
         {state.openConfigs.length === 0 ? (
-          <div>
-            <p className="empty">暂无数据开放配置。</p>
-            {canCreate ? <Link to={ROUTES.openNew}>新建开放配置</Link> : null}
-          </div>
+          <EmptyHint action={canCreate ? <Button variant="link" nativeButton={false} render={<Link to={ROUTES.openNew} />}>新建开放配置</Button> : null}>
+            暂无数据开放配置。
+          </EmptyHint>
         ) : rows.length === 0 ? (
-          <p className="empty">无符合筛选的开放配置。</p>
+          <EmptyHint>无符合筛选的开放配置。</EmptyHint>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>名称</th>
-                  <th>类型</th>
-                  <th>状态</th>
-                  <th>依赖／暂停原因</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((item) => {
-                  const runtime = openRuntime(state, item)
-                  return (
-                    <tr key={item.id} data-testid={`open-row-${item.id}`}>
-                      <td>
-                        <Link to={openDetailPath(item.id)}>{displayOpenName(item)}</Link>
-                      </td>
-                      <td>{openTypeLabel(item.type)}</td>
-                      <td>
-                        <StatusText>{openStatusLabel(runtime.status)}</StatusText>
-                        {runtime.statusNote ? <div className="muted">{runtime.statusNote}</div> : null}
-                      </td>
-                      <td>
-                        {runtime.displayReasons.length === 0 ? (
-                          <span className="muted">无</span>
-                        ) : (
-                          runtime.displayReasons.join('；')
-                        )}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Table className="[&_td]:whitespace-normal">
+            <TableHeader>
+              <TableRow>
+                <TableHead>名称</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>依赖／暂停原因</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map((item) => {
+                const runtime = openRuntime(state, item)
+                return (
+                  <TableRow key={item.id} data-testid={`open-row-${item.id}`}>
+                    <TableCell>
+                      <Link className="text-primary font-medium hover:underline" to={openDetailPath(item.id)}>
+                        {displayOpenName(item)}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{openTypeLabel(item.type)}</TableCell>
+                    <TableCell>
+                      <StatusText>{openStatusLabel(runtime.status)}</StatusText>
+                      {runtime.statusNote ? <Muted className="mt-1">{runtime.statusNote}</Muted> : null}
+                    </TableCell>
+                    <TableCell>
+                      {runtime.displayReasons.length === 0 ? (
+                        <span className="text-muted-foreground">无</span>
+                      ) : (
+                        runtime.displayReasons.join('；')
+                      )}
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </Panel>
     </section>
   )
 }

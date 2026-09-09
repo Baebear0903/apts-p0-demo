@@ -21,6 +21,7 @@ import {
 } from '../../store/store'
 import { PageHeader } from '../../ui/PageHeader'
 import { Modal, Toast } from '../../ui/Modal'
+import { Button, Muted, PageStack, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Toolbar } from '../../ui/kit'
 import { cohortConditionText } from '../patients/PatientEvidencePanel'
 
 export function CohortDetailPage() {
@@ -69,7 +70,8 @@ export function CohortDetailPage() {
       <section>
         <PageHeader title={dynamic.name} backTo={ROUTES.cohorts} backLabel="返回人群列表" />
         {toast ? <Toast message={toast.text} tone={toast.tone} /> : null}
-        <div className="panel">
+        <PageStack>
+        <Panel>
           <dl className="dl">
             <dt>类型</dt>
             <dd>动态人群</dd>
@@ -93,59 +95,57 @@ export function CohortDetailPage() {
               当前不能计算：{availability.reason}。不能当作 0 命中。
             </div>
           ) : null}
-          <div className="toolbar-actions">
+          <Toolbar className="mt-4">
             {canRefresh ? (
-              <button type="button" className="btn-primary" data-testid="refresh-cohort" onClick={refresh}>
+              <Button type="button" data-testid="refresh-cohort" onClick={refresh}>
                 刷新
-              </button>
+              </Button>
             ) : null}
             {canSnapshot ? (
-              <button
+              <Button
                 type="button"
-                className="btn-ghost"
+                variant="outline"
                 data-testid="confirm-from-dynamic"
                 disabled={members === 'not_computed' || members.length === 0}
                 onClick={() => setConfirmOpen(true)}
               >
                 确认快照
-              </button>
+              </Button>
             ) : null}
             {canEdit ? (
-              <button type="button" className="btn-ghost" onClick={() => setEditOpen(true)}>
+              <Button type="button" variant="outline" onClick={() => setEditOpen(true)}>
                 编辑条件
-              </button>
+              </Button>
             ) : null}
             {state.session.permissions.buttons.openCreate ? (
               canOpen ? (
-                <Link
-                  className="btn-ghost"
-                  to={openNewPath({ type: 'tag_subscription', cohortId: dynamic.id })}
-                  data-testid="open-subscribe"
+                <Button
+                  variant="outline"
+                  nativeButton={false}
+                  render={<Link to={openNewPath({ type: 'tag_subscription', cohortId: dynamic.id })} data-testid="open-subscribe" />}
                 >
                   开放订阅
-                </Link>
+                </Button>
               ) : (
-                <span className="muted">缺授权不能发起订阅</span>
+                <Muted>缺授权不能发起订阅</Muted>
               )
             ) : null}
-          </div>
-        </div>
+          </Toolbar>
+        </Panel>
 
-        <div className="panel">
-          <h3>成员</h3>
+        <Panel title="成员">
           {members === 'not_computed' ? (
-            <p className="empty">尚未计算。条件已修改或尚无对应成功结果，不沿用旧条件成员。</p>
+            <Muted>尚未计算。条件已修改或尚无对应成功结果，不沿用旧条件成员。</Muted>
           ) : (
             <MemberLinks state={state} patientIds={members} from={from} />
           )}
-        </div>
+        </Panel>
 
-        <div className="panel">
-          <h3>相关批次</h3>
+        <Panel title="相关批次">
           {related.length === 0 ? (
-            <p className="empty">暂无相关批次。</p>
+            <Muted>暂无相关批次。</Muted>
           ) : (
-            <ul>
+            <ul className="space-y-2 text-sm">
               {related.map((batch) => (
                 <li key={batch.id}>
                   {batch.id} · {formatDateTime(batch.computedAt)} · {batch.ruleExplanation.logicSummary}
@@ -153,7 +153,8 @@ export function CohortDetailPage() {
               ))}
             </ul>
           )}
-        </div>
+        </Panel>
+        </PageStack>
 
         {editOpen ? (
           <EditConditionsModal
@@ -209,7 +210,8 @@ export function CohortDetailPage() {
     <section>
       <PageHeader title={snapshot.name} backTo={ROUTES.cohorts} backLabel="返回人群列表" />
       {toast ? <Toast message={toast.text} tone={toast.tone} /> : null}
-      <div className="panel">
+      <PageStack>
+      <Panel>
         <dl className="dl">
           <dt>类型</dt>
           <dd>人群快照</dd>
@@ -230,31 +232,31 @@ export function CohortDetailPage() {
           <dt>人数</dt>
           <dd>{snapshot.members.length}</dd>
         </dl>
-        <div className="toolbar-actions">
+        <Toolbar className="mt-4">
           {canAdjust ? (
-            <button type="button" className="btn-ghost" data-testid="adjust-snapshot" onClick={() => setAdjustOpen(true)}>
+            <Button type="button" variant="outline" data-testid="adjust-snapshot" onClick={() => setAdjustOpen(true)}>
               调整成员
-            </button>
+            </Button>
           ) : null}
           {state.session.permissions.buttons.openCreate ? (
-            <Link
-              className="btn-ghost"
-              to={openNewPath({ type: 'dataset_delivery', snapshotId: snapshot.id })}
-              data-testid="export-snapshot"
+            <Button
+              variant="outline"
+              nativeButton={false}
+              render={<Link to={openNewPath({ type: 'dataset_delivery', snapshotId: snapshot.id })} data-testid="export-snapshot" />}
             >
               导出
-            </Link>
+            </Button>
           ) : null}
-        </div>
-      </div>
-      <div className="panel">
-        <h3>成员</h3>
+        </Toolbar>
+      </Panel>
+      <Panel title="成员">
         <MemberLinks
           state={state}
           patientIds={snapshot.members.map((item) => item.patientId)}
           from={from}
         />
-      </div>
+      </Panel>
+      </PageStack>
       {adjustOpen ? (
         <AdjustMembersModal
           title="从快照调整成员"
@@ -294,35 +296,35 @@ function MemberLinks({
   patientIds: string[]
   from: string
 }) {
-  if (patientIds.length === 0) return <p className="empty">0 人。</p>
+  if (patientIds.length === 0) return <Muted>0 人。</Muted>
   return (
-    <div className="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>患者</th>
-            <th>标识</th>
-            <th>性别</th>
-            <th>年龄</th>
-          </tr>
-        </thead>
-        <tbody>
-          {patientIds.map((patientId) => {
-            const patient = patientById(state, patientId)
-            return (
-              <tr key={patientId}>
-                <td>
-                  <Link to={patientPath(patientId, from)}>{patient?.name ?? patientId}</Link>
-                </td>
-                <td>{patientId}</td>
-                <td>{patient?.sex ?? '—'}</td>
-                <td>{patient?.age ?? '—'}</td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>患者</TableHead>
+          <TableHead>标识</TableHead>
+          <TableHead>性别</TableHead>
+          <TableHead>年龄</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {patientIds.map((patientId) => {
+          const patient = patientById(state, patientId)
+          return (
+            <TableRow key={patientId}>
+              <TableCell>
+                <Link className="text-primary font-medium hover:underline" to={patientPath(patientId, from)}>
+                  {patient?.name ?? patientId}
+                </Link>
+              </TableCell>
+              <TableCell className="text-muted-foreground">{patientId}</TableCell>
+              <TableCell>{patient?.sex ?? '—'}</TableCell>
+              <TableCell>{patient?.age ?? '—'}</TableCell>
+            </TableRow>
+          )
+        })}
+      </TableBody>
+    </Table>
   )
 }
 

@@ -7,6 +7,17 @@ import { useDemoStore } from '../../store/DemoStoreContext'
 import { allocateMetricId, deleteMetric, disableMetric, restoreMetric, saveMetric } from '../../store/store'
 import { PageHeader, StatusText } from '../../ui/PageHeader'
 import { Modal, Toast } from '../../ui/Modal'
+import {
+  Button,
+  Panel,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Toolbar,
+} from '../../ui/kit'
 
 const JUDGMENT_LABEL: Record<JudgmentType, string> = {
   direct_compare: '直接比较',
@@ -58,111 +69,104 @@ export function MetricsPage() {
         description="配置字段绑定或衍生指标，供标签规则引用。"
         extra={
           canMaintain ? (
-            <button type="button" className="btn-primary" onClick={openNew}>
+            <Button type="button" onClick={openNew}>
               新建指标
-            </button>
+            </Button>
           ) : null
         }
       />
       {message ? <Toast message={message.text} tone={message.tone} /> : null}
       {deleteError ? <Toast message={deleteError} tone="error" /> : null}
-      <div className="panel">
+      <Panel>
         {state.metrics.length === 0 ? (
           <p className="empty">
             暂无指标。
             {canMaintain ? (
-              <button type="button" className="btn-primary" onClick={openNew}>
+              <Button type="button" className="ml-2" onClick={openNew}>
                 新建指标
-              </button>
+              </Button>
             ) : null}
           </p>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>名称</th>
-                  <th>目录</th>
-                  <th>类型</th>
-                  <th>绑定／公式</th>
-                  <th>状态</th>
-                  <th>判断方式</th>
-                  <th>引用数</th>
-                  {canMaintain ? <th>操作</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {state.metrics.map((metric) => {
-                  const refs = metricReferences(state, metric.id)
-                  const count = refs.tags.length + refs.derived.length
-                  return (
-                    <tr key={metric.id}>
-                      <td>{metric.name}</td>
-                      <td>{metric.catalog}</td>
-                      <td>{metric.kind === 'field_binding' ? '字段绑定' : '衍生'}</td>
-                      <td>
-                        {metric.binding
-                          ? `${metric.binding.tableName}.${metric.binding.field}`
-                          : metric.derived?.formula ?? metric.derived?.function ?? '—'}
-                      </td>
-                      <td>
-                        <StatusText>{metric.status === 'active' ? '可用' : '停用'}</StatusText>
-                      </td>
-                      <td>{metric.applicableJudgments.map((item) => JUDGMENT_LABEL[item]).join('／')}</td>
-                      <td>{count}</td>
-                      {canMaintain ? (
-                        <td>
-                          <div className="toolbar-actions">
-                            <button type="button" className="btn-ghost" onClick={() => { setIsNew(false); setEditing(metric) }}>
-                              编辑
-                            </button>
-                            {metric.status === 'active' ? (
-                              <button
-                                type="button"
-                                className="btn-ghost"
-                                onClick={() => patch((current) => disableMetric(current, metric.id))}
-                              >
-                                停用
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="btn-ghost"
-                                onClick={() => patch((current) => restoreMetric(current, metric.id))}
-                              >
-                                恢复
-                              </button>
-                            )}
-                            <button
-                              type="button"
-                              className="btn-ghost"
-                              onClick={() => {
-                                const result = deleteMetric(state, metric.id)
-                                if (!result.ok) {
-                                  const names = [
-                                    ...result.references.tags.map((item) => `标签「${item.name}」`),
-                                    ...result.references.derived.map((item) => `衍生指标「${item.name}」`),
-                                  ]
-                                  setDeleteError(`${result.reason}：${names.join('、')}`)
-                                  return
-                                }
-                                patch(() => result.state)
-                                setDeleteError(null)
-                              }}
-                            >
-                              删除
-                            </button>
-                          </div>
-                        </td>
-                      ) : null}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Table className="[&_td]:align-top">
+            <TableHeader>
+              <TableRow>
+                <TableHead>名称</TableHead>
+                <TableHead>目录</TableHead>
+                <TableHead>类型</TableHead>
+                <TableHead>绑定／公式</TableHead>
+                <TableHead>状态</TableHead>
+                <TableHead>判断方式</TableHead>
+                <TableHead>引用数</TableHead>
+                {canMaintain ? <TableHead>操作</TableHead> : null}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {state.metrics.map((metric) => {
+                const refs = metricReferences(state, metric.id)
+                const count = refs.tags.length + refs.derived.length
+                return (
+                  <TableRow key={metric.id}>
+                    <TableCell className="font-medium">{metric.name}</TableCell>
+                    <TableCell>{metric.catalog}</TableCell>
+                    <TableCell>{metric.kind === 'field_binding' ? '字段绑定' : '衍生'}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {metric.binding
+                        ? `${metric.binding.tableName}.${metric.binding.field}`
+                        : metric.derived?.formula ?? metric.derived?.function ?? '—'}
+                    </TableCell>
+                    <TableCell>
+                      <StatusText>{metric.status === 'active' ? '可用' : '停用'}</StatusText>
+                    </TableCell>
+                    <TableCell className="max-w-[18rem] whitespace-normal">
+                      {metric.applicableJudgments.map((item) => JUDGMENT_LABEL[item]).join('／')}
+                    </TableCell>
+                    <TableCell>{count}</TableCell>
+                    {canMaintain ? (
+                      <TableCell>
+                        <Toolbar>
+                          <Button type="button" variant="outline" size="sm" onClick={() => { setIsNew(false); setEditing(metric) }}>
+                            编辑
+                          </Button>
+                          {metric.status === 'active' ? (
+                            <Button type="button" variant="outline" size="sm" onClick={() => patch((current) => disableMetric(current, metric.id))}>
+                              停用
+                            </Button>
+                          ) : (
+                            <Button type="button" variant="outline" size="sm" onClick={() => patch((current) => restoreMetric(current, metric.id))}>
+                              恢复
+                            </Button>
+                          )}
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const result = deleteMetric(state, metric.id)
+                              if (!result.ok) {
+                                const names = [
+                                  ...result.references.tags.map((item) => `标签「${item.name}」`),
+                                  ...result.references.derived.map((item) => `衍生指标「${item.name}」`),
+                                ]
+                                setDeleteError(`${result.reason}：${names.join('、')}`)
+                                return
+                              }
+                              patch(() => result.state)
+                              setDeleteError(null)
+                            }}
+                          >
+                            删除
+                          </Button>
+                        </Toolbar>
+                      </TableCell>
+                    ) : null}
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         )}
-      </div>
+      </Panel>
       {editing ? (
         <MetricModal
           stateMetrics={state}

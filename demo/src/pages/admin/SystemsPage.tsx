@@ -14,6 +14,18 @@ import { periodLabel } from '../../store/systems'
 import type { ConnectedSystemInput } from '../../store/systems'
 import { PageHeader, StatusText } from '../../ui/PageHeader'
 import { Modal, Toast } from '../../ui/Modal'
+import {
+  Button,
+  Muted,
+  Panel,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Toolbar,
+} from '../../ui/kit'
 
 const METHOD_OPTIONS: Array<Exclude<DeliveryMethod, 'direct_export'>> = [
   'snapshot_channel',
@@ -34,107 +46,108 @@ export function SystemsPage() {
         description="线下联调后的登记项。通道引用不是 URL，不发起网络请求。无地址、密钥或调用日志。"
         extra={
           canMaintain ? (
-            <button type="button" className="btn-primary" onClick={() => setEditing('new')}>
+            <Button type="button" onClick={() => setEditing('new')}>
               新建已对接系统
-            </button>
+            </Button>
           ) : null
         }
       />
       {message ? <Toast message={message.text} tone={message.tone} /> : null}
-      <div className="panel">
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>名称</th>
-                <th>编码</th>
-                <th>默认使用方</th>
-                <th>状态</th>
-                <th>支持方式</th>
-                <th>周期声明</th>
-                <th>通道</th>
-                <th>责任组织</th>
-                <th>最后校验</th>
-                {canMaintain ? <th>操作</th> : null}
-              </tr>
-            </thead>
-            <tbody>
-              {state.connectedSystems.map((system) => (
-                <tr key={system.id} data-testid={`system-row-${system.id}`}>
-                  <td>{system.name}</td>
-                  <td>{system.code}</td>
-                  <td>{system.defaultConsumer}</td>
-                  <td>
-                    <StatusText>{system.status === 'available' ? '可用' : '停用'}</StatusText>
-                  </td>
-                  <td>{system.methods.map(methodLabel).join('、')}</td>
-                  <td>{periodLabel(system)}</td>
-                  <td>{system.channelId}</td>
-                  <td>{organizationName(state, system.responsibleOrgId)}</td>
-                  <td>{formatDateTime(system.lastValidatedAt)}</td>
-                  {canMaintain ? (
-                    <td>
-                      <div className="toolbar-actions">
-                        <button type="button" className="btn-ghost" onClick={() => setEditing(system)}>
-                          编辑
-                        </button>
-                        {system.status === 'available' ? (
-                          <button
-                            type="button"
-                            className="btn-ghost"
-                            data-testid={`disable-system-${system.id}`}
-                            onClick={() => {
-                              const result = disableConnectedSystem(state, system.id)
-                              if (!result.ok) setMessage({ text: result.reason, tone: 'error' })
-                              else {
-                                patch(() => result.state)
-                                setMessage({ text: '系统已停用，关联已启用开放已暂停', tone: 'ok' })
-                              }
-                            }}
-                          >
-                            停用
-                          </button>
-                        ) : (
-                          <button
-                            type="button"
-                            className="btn-ghost"
-                            data-testid={`restore-system-${system.id}`}
-                            onClick={() => {
-                              const result = restoreConnectedSystem(state, system.id)
-                              if (!result.ok) setMessage({ text: result.reason, tone: 'error' })
-                              else {
-                                patch(() => result.state)
-                                setMessage({ text: '系统已恢复，关联配置待人工恢复', tone: 'ok' })
-                              }
-                            }}
-                          >
-                            恢复
-                          </button>
-                        )}
-                        <button
+      <Panel>
+        <Table className="[&_td]:align-top">
+          <TableHeader>
+            <TableRow>
+              <TableHead>名称</TableHead>
+              <TableHead>编码</TableHead>
+              <TableHead>默认使用方</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead>支持方式</TableHead>
+              <TableHead>周期声明</TableHead>
+              <TableHead>通道</TableHead>
+              <TableHead>责任组织</TableHead>
+              <TableHead>最后校验</TableHead>
+              {canMaintain ? <TableHead>操作</TableHead> : null}
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {state.connectedSystems.map((system) => (
+              <TableRow key={system.id} data-testid={`system-row-${system.id}`}>
+                <TableCell className="font-medium">{system.name}</TableCell>
+                <TableCell>{system.code}</TableCell>
+                <TableCell>{system.defaultConsumer}</TableCell>
+                <TableCell>
+                  <StatusText>{system.status === 'available' ? '可用' : '停用'}</StatusText>
+                </TableCell>
+                <TableCell className="max-w-[16rem] whitespace-normal">{system.methods.map(methodLabel).join('、')}</TableCell>
+                <TableCell className="max-w-[12rem] whitespace-normal">{periodLabel(system)}</TableCell>
+                <TableCell>{system.channelId}</TableCell>
+                <TableCell>{organizationName(state, system.responsibleOrgId)}</TableCell>
+                <TableCell>{formatDateTime(system.lastValidatedAt)}</TableCell>
+                {canMaintain ? (
+                  <TableCell>
+                    <Toolbar>
+                      <Button type="button" variant="outline" size="sm" onClick={() => setEditing(system)}>
+                        编辑
+                      </Button>
+                      {system.status === 'available' ? (
+                        <Button
                           type="button"
-                          className="btn-ghost"
+                          variant="outline"
+                          size="sm"
+                          data-testid={`disable-system-${system.id}`}
                           onClick={() => {
-                            const result = stampSystemValidated(state, system.id)
+                            const result = disableConnectedSystem(state, system.id)
                             if (!result.ok) setMessage({ text: result.reason, tone: 'error' })
                             else {
                               patch(() => result.state)
-                              setMessage({ text: '已登记校验时间', tone: 'ok' })
+                              setMessage({ text: '系统已停用，关联已启用开放已暂停', tone: 'ok' })
                             }
                           }}
                         >
-                          登记已校验
-                        </button>
-                      </div>
-                    </td>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="muted">联系人是登记信息，不提供外发消息。</p>
-      </div>
+                          停用
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          data-testid={`restore-system-${system.id}`}
+                          onClick={() => {
+                            const result = restoreConnectedSystem(state, system.id)
+                            if (!result.ok) setMessage({ text: result.reason, tone: 'error' })
+                            else {
+                              patch(() => result.state)
+                              setMessage({ text: '系统已恢复，关联配置待人工恢复', tone: 'ok' })
+                            }
+                          }}
+                        >
+                          恢复
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const result = stampSystemValidated(state, system.id)
+                          if (!result.ok) setMessage({ text: result.reason, tone: 'error' })
+                          else {
+                            patch(() => result.state)
+                            setMessage({ text: '已登记校验时间', tone: 'ok' })
+                          }
+                        }}
+                      >
+                        登记已校验
+                      </Button>
+                    </Toolbar>
+                  </TableCell>
+                ) : null}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+        <Muted className="mt-3">联系人是登记信息，不提供外发消息。</Muted>
+      </Panel>
       {editing ? (
         <SystemModal
           state={state}

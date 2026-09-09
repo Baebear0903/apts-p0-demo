@@ -2,6 +2,17 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { formatDateTime } from '../demo/clock'
 import { useDemoStore } from '../store/DemoStoreContext'
+import { Badge } from '@/components/ui/badge'
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+} from '@/components/ui/breadcrumb'
+import { Clock3 } from 'lucide-react'
+import { Muted, Notice, StatusText } from './kit'
+
+export { StatusText }
 
 export function PageHeader({
   title,
@@ -18,19 +29,28 @@ export function PageHeader({
 }) {
   const { state } = useDemoStore()
   return (
-    <header className="page-header">
-      <div>
+    <header className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+      <div className="min-w-0 space-y-1">
         {backTo ? (
-          <Link className="back-link" to={backTo}>
-            ← {backLabel}
-          </Link>
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink className="text-xs" render={<Link to={backTo} />}>
+                  {backLabel}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         ) : null}
-        <h2>{title}</h2>
-        {description ? <p>{description}</p> : null}
-        {extra}
+        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+        {description ? <div className="text-muted-foreground text-sm">{description}</div> : null}
       </div>
-      <div className="clock-chip" data-testid="demo-clock">
-        演示时间 {formatDateTime(state.clock)}
+      <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+        {extra}
+        <Badge variant="outline" className="h-8 gap-1.5 px-2.5 font-normal" data-testid="demo-clock">
+          <Clock3 className="size-3.5" />
+          演示时间 {formatDateTime(state.clock)}
+        </Badge>
       </div>
     </header>
   )
@@ -38,17 +58,13 @@ export function PageHeader({
 
 export function LaterStageNotice({ children }: { children?: ReactNode }) {
   return (
-    <div className="notice" role="note">
+    <Notice tone="info" role="note">
       <strong>本页将在后续阶段提供完整操作。</strong>
-      {children ? <div>{children}</div> : null}
-    </div>
+      {children ? <div className="mt-1">{children}</div> : null}
+    </Notice>
   )
 }
 
 export function PhoneNote() {
-  return <p className="phone-note">联系电话为虚构演示号码，非真实号码。</p>
-}
-
-export function StatusText({ children }: { children: ReactNode }) {
-  return <span className="status">{children}</span>
+  return <Muted className="mt-2">联系电话为虚构演示号码，非真实号码。</Muted>
 }

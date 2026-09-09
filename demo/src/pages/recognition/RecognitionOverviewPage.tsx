@@ -15,6 +15,18 @@ import {
 import { generateAutoRecognitionBatch } from '../../store/store'
 import { PageHeader, StatusText } from '../../ui/PageHeader'
 import { Toast } from '../../ui/Modal'
+import {
+  Button,
+  EmptyHint,
+  Muted,
+  Panel,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../ui/kit'
 
 export function RecognitionOverviewPage() {
   const { state, patch } = useDemoStore()
@@ -37,104 +49,101 @@ export function RecognitionOverviewPage() {
     <section>
       <PageHeader title="识别中心" description="已开启自动识别的标签及已停止的历史入口。删除后只读历史不计入当前自动识别标签数。" />
       {toast ? <Toast message={toast} /> : null}
-      <div className="panel">
+      <Panel>
         {empty ? (
-          <p className="empty">无已开启自动识别的标签且无历史批次。</p>
+          <EmptyHint>无已开启自动识别的标签且无历史批次。</EmptyHint>
         ) : (
-          <div className="table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>标签</th>
-                  <th>周期</th>
-                  <th>最近扫描</th>
-                  <th>人数</th>
-                  <th>确认状态</th>
-                  <th>批次</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {enabledTags.map((tag) => {
-                  const batch = latestBatchForTag(state, tag.id)
-                  const hitCount = batch ? uniquePatientIds(hitsOfBatch(state, batch.id)).length : 0
-                  const confirmation = batch?.scopeConfirmations[state.currentScopeId]
-                  const availability = tagAvailability(state, tag)
-                  return (
-                    <tr key={tag.id}>
-                      <td>
-                        {tag.name}
-                        {!availability.available ? (
-                          <div className="muted">不可用：{availability.reasons.join('；')}</div>
-                        ) : null}
-                      </td>
-                      <td>每 {tag.autoRecognitionIntervalDays ?? '—'} 天</td>
-                      <td>{batch ? formatDateTime(batch.computedAt) : '尚未扫描'}</td>
-                      <td>{batch ? hitCount : '—'}</td>
-                      <td>
-                        <StatusText>
-                          {!batch
-                            ? '—'
-                            : hitCount === 0
-                              ? '0 命中，不出现待确认'
-                              : confirmation?.status === 'pending'
-                                ? '待确认'
-                                : confirmation?.zeroRetention
-                                  ? '已确认（零保留）'
-                                  : '已确认'}
-                        </StatusText>
-                      </td>
-                      <td>
-                        {batch ? (
-                          <Link to={recognitionBatchPath(tag.id, batch.id)}>{batch.id}</Link>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="btn-ghost"
-                          data-testid={`generate-batch-${tag.id}`}
-                          onClick={() => generate(tag.id)}
-                        >
-                          产生新批次
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-                {historicalTagIds.map((tagId) => {
-                  const tag = state.tags.find((item) => item.id === tagId)
-                  const batch = latestBatchForTag(state, tagId)
-                  const reason = recognitionHistoryReason(state, tagId)
-                  return (
-                    <tr key={tagId}>
-                      <td>
-                        {tag?.name ?? tagId}（历史入口）
-                        <div className="muted">{reason}</div>
-                      </td>
-                      <td>—</td>
-                      <td>{batch ? formatDateTime(batch.computedAt) : '—'}</td>
-                      <td>{batch ? uniquePatientIds(hitsOfBatch(state, batch.id)).length : '—'}</td>
-                      <td>只读历史</td>
-                      <td>
-                        {batch ? (
-                          <Link to={recognitionBatchPath(tagId, batch.id)}>{batch.id}</Link>
-                        ) : (
-                          '—'
-                        )}
-                      </td>
-                      <td></td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <Table className="[&_td]:whitespace-normal">
+            <TableHeader>
+              <TableRow>
+                <TableHead>标签</TableHead>
+                <TableHead>周期</TableHead>
+                <TableHead>最近扫描</TableHead>
+                <TableHead>人数</TableHead>
+                <TableHead>确认状态</TableHead>
+                <TableHead>批次</TableHead>
+                <TableHead></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {enabledTags.map((tag) => {
+                const batch = latestBatchForTag(state, tag.id)
+                const hitCount = batch ? uniquePatientIds(hitsOfBatch(state, batch.id)).length : 0
+                const confirmation = batch?.scopeConfirmations[state.currentScopeId]
+                const availability = tagAvailability(state, tag)
+                return (
+                  <TableRow key={tag.id}>
+                    <TableCell>
+                      {tag.name}
+                      {!availability.available ? (
+                        <Muted className="mt-1">不可用：{availability.reasons.join('；')}</Muted>
+                      ) : null}
+                    </TableCell>
+                    <TableCell>每 {tag.autoRecognitionIntervalDays ?? '—'} 天</TableCell>
+                    <TableCell>{batch ? formatDateTime(batch.computedAt) : '尚未扫描'}</TableCell>
+                    <TableCell>{batch ? hitCount : '—'}</TableCell>
+                    <TableCell>
+                      <StatusText>
+                        {!batch
+                          ? '—'
+                          : hitCount === 0
+                            ? '0 命中，不出现待确认'
+                            : confirmation?.status === 'pending'
+                              ? '待确认'
+                              : confirmation?.zeroRetention
+                                ? '已确认（零保留）'
+                                : '已确认'}
+                      </StatusText>
+                    </TableCell>
+                    <TableCell>
+                      {batch ? (
+                        <Link className="text-primary hover:underline" to={recognitionBatchPath(tag.id, batch.id)}>
+                          {batch.id}
+                        </Link>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Button type="button" variant="outline" size="sm" data-testid={`generate-batch-${tag.id}`} onClick={() => generate(tag.id)}>
+                        产生新批次
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                )
+              })}
+              {historicalTagIds.map((tagId) => {
+                const tag = state.tags.find((item) => item.id === tagId)
+                const batch = latestBatchForTag(state, tagId)
+                const reason = recognitionHistoryReason(state, tagId)
+                return (
+                  <TableRow key={tagId}>
+                    <TableCell>
+                      {tag?.name ?? tagId}（历史入口）
+                      <Muted className="mt-1">{reason}</Muted>
+                    </TableCell>
+                    <TableCell>—</TableCell>
+                    <TableCell>{batch ? formatDateTime(batch.computedAt) : '—'}</TableCell>
+                    <TableCell>{batch ? uniquePatientIds(hitsOfBatch(state, batch.id)).length : '—'}</TableCell>
+                    <TableCell>只读历史</TableCell>
+                    <TableCell>
+                      {batch ? (
+                        <Link className="text-primary hover:underline" to={recognitionBatchPath(tagId, batch.id)}>
+                          {batch.id}
+                        </Link>
+                      ) : (
+                        '—'
+                      )}
+                    </TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                )
+              })}
+            </TableBody>
+          </Table>
         )}
-        <p className="muted">当前自动识别标签数 {enabledTags.length}。已删除标签不计入。</p>
-      </div>
+        <Muted className="mt-3">当前自动识别标签数 {enabledTags.length}。已删除标签不计入。</Muted>
+      </Panel>
     </section>
   )
 }

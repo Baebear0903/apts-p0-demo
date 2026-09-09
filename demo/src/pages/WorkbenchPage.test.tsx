@@ -54,14 +54,18 @@ describe('关键路由可打开', () => {
     expect(screen.getByRole('heading', { level: 2, name: title })).toBeInTheDocument()
   })
 
-  it('运营分析占位正文为模块开发中', () => {
+  it('运营分析展示内部使用规模而非占位', () => {
     renderApp('/analytics')
-    expect(screen.getByText('模块开发中')).toBeInTheDocument()
+    expect(screen.queryByText('模块开发中')).toBeNull()
+    expect(screen.getByTestId('analytics-stats')).toBeInTheDocument()
+    expect(screen.getByTestId('anl-cohorts')).toHaveTextContent(/[1-9]/)
+    expect(screen.getByTestId('anl-open')).toHaveTextContent(/[1-9]/)
   })
 
-  it('标签使用授权为占位说明', () => {
+  it('标签使用授权展示演示白名单', () => {
     renderApp('/admin/auth')
-    expect(screen.getByText('标签使用授权配置暂不演示')).toBeInTheDocument()
+    expect(screen.getByTestId('auth-whitelist')).toBeInTheDocument()
+    expect(screen.getByText('眼科复诊运营筛选')).toBeInTheDocument()
   })
 
   it('患者范围只读展示全院且不含无院区建档对象', () => {

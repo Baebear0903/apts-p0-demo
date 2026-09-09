@@ -3,7 +3,7 @@ import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import App from '../../App'
 import { createInitialState } from '../../data/seed'
-import { BATCH_INITIAL_ID, SYS_PATIENT_ID, TAG_ADULT_ID, TAG_EYE_OP_ID } from '../../domain/ids'
+import { BATCH_INITIAL_ID, DEMO_OPEN_EXPORT_NAME, SYS_PATIENT_ID, TAG_ADULT_ID, TAG_EYE_OP_ID } from '../../domain/ids'
 import { DemoStoreProvider } from '../../store/DemoStoreContext'
 import { confirmRecognitionBatch, enableOpenConfig, saveDynamicCohort, saveOpenConfig } from '../../store/store'
 import { queryIncludeExclude } from '../../store/cohorts'
@@ -41,7 +41,8 @@ describe('数据开放页面', () => {
   it('列表与系统页不再出现后续阶段提示', () => {
     renderApp('/open')
     expect(screen.queryByText('本页将在后续阶段提供完整操作')).toBeNull()
-    expect(screen.getByText('暂无数据开放配置。')).toBeInTheDocument()
+    expect(screen.queryByText('暂无数据开放配置。')).toBeNull()
+    expect(screen.getByText(DEMO_OPEN_EXPORT_NAME)).toBeInTheDocument()
   })
 
   it('已对接系统可维护且无地址密钥日志', () => {
