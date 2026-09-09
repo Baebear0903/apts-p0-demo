@@ -1,0 +1,11 @@
+.DS_Store
+**/.DS_Store
+node_modules/
+dist/
+coverage/
+.npm-cache/
+*.local
+.vite/
+*.log
+.idea/
+.vscode/
