@@ -24,8 +24,8 @@ import {
   simulateChannelDelivery,
   simulateOpenExpiry,
 } from '../../store/store'
-import { PageHeader, PhoneNote, StatusText } from '../../ui/PageHeader'
-import { Toast } from '../../ui/Modal'
+import { PageHeader, PhoneNote, StatusText } from '@/components/shared/PageHeader'
+import { Toast } from '@/components/shared/Modal'
 import { OpenConfigForm, formFromConfig, inputFromForm, type OpenFormValue } from './OpenConfigForm'
 
 export function OpenDetailPage() {

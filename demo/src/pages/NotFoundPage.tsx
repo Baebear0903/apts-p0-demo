@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 import { ROUTES } from '../app/routes'
-import { PageHeader } from '../ui/PageHeader'
-import { Button, Panel } from '../ui/kit'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { Button, Panel } from '@/components/shared/kit'
 
 export function NotFoundPage() {
   return (

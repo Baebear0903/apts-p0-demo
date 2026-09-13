@@ -12,12 +12,12 @@ import {
   Users,
   Variable,
 } from 'lucide-react'
-import { ROUTES } from '../app/routes'
-import { DEMO_OPERATOR_NAME } from '../domain/ids'
-import type { ModuleKey } from '../domain/types'
-import { useDemoStore } from '../store/DemoStoreContext'
-import { Notice } from './kit'
-import { DemoControls } from './DemoControls'
+import { ROUTES } from '@/app/routes'
+import { DEMO_OPERATOR_NAME } from '@/domain/ids'
+import type { ModuleKey } from '@/domain/types'
+import { useDemoStore } from '@/store/DemoStoreContext'
+import { Notice } from '@/components/shared/kit'
+import { DemoControls } from '@/components/app/DemoControls'
 import {
   Sidebar,
   SidebarContent,

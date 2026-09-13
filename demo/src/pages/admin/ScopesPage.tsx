@@ -1,6 +1,6 @@
 import { useDemoStore } from '../../store/DemoStoreContext'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
-import { Dd, DescriptionList, Dt, Muted, Panel } from '../../ui/kit'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
+import { Dd, DescriptionList, Dt, Muted, Panel } from '@/components/shared/kit'
 
 export function ScopesPage() {
   const { state } = useDemoStore()

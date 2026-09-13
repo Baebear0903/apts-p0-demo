@@ -3,8 +3,8 @@ import { ROUTES, cohortDetailPath } from '../../app/routes'
 import { formatDateTime } from '../../demo/clock'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { currentDynamicMemberIds } from '../../store/selectors'
-import { PageHeader } from '../../ui/PageHeader'
-import { Button, EmptyHint, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/kit'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { Button, EmptyHint, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/shared/kit'
 
 export function CohortListPage() {
   const { state } = useDemoStore()

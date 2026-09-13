@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { ChevronDown } from 'lucide-react'
-import { addMinutes, formatDateTime } from '../demo/clock'
-import type { ButtonPermissionKey, ModuleKey } from '../domain/types'
-import { useDemoStore } from '../store/DemoStoreContext'
+import { addMinutes, formatDateTime } from '@/demo/clock'
+import type { ButtonPermissionKey, ModuleKey } from '@/domain/types'
+import { useDemoStore } from '@/store/DemoStoreContext'
 import { Button } from '@/components/ui/button'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { FieldSet, FieldLegend } from '@/components/ui/field'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { CheckRow, NativeCheck } from './kit'
+import { CheckRow, NativeCheck } from '@/components/shared/kit'
 
 const MODULE_LABELS: Array<{ key: ModuleKey; label: string }> = [
   { key: 'tags', label: '标签中心' },

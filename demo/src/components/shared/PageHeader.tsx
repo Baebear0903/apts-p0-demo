@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { formatDateTime } from '../demo/clock'
-import { useDemoStore } from '../store/DemoStoreContext'
+import { formatDateTime } from '@/demo/clock'
+import { useDemoStore } from '@/store/DemoStoreContext'
 import { Badge } from '@/components/ui/badge'
 import {
   Breadcrumb,
@@ -10,7 +10,7 @@ import {
   BreadcrumbList,
 } from '@/components/ui/breadcrumb'
 import { Clock3 } from 'lucide-react'
-import { Muted, Notice, StatusText } from './kit'
+import { Muted, Notice, StatusText } from '@/components/shared/kit'
 
 export { StatusText }
 

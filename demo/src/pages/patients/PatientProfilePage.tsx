@@ -1,3 +1,4 @@
+import { cohortConditionText } from '@/domain/logicSummary'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { ROUTES } from '../../app/routes'
 import type { RemoveReasonCode } from '../../domain/types'
@@ -12,10 +13,10 @@ import {
   tagById,
 } from '../../store/selectors'
 import { removeFromReview } from '../../store/store'
-import { PageHeader } from '../../ui/PageHeader'
-import { Toast } from '../../ui/Modal'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { Toast } from '@/components/shared/Modal'
 import { useState } from 'react'
-import { PatientEvidencePanel, cohortConditionText } from './PatientEvidencePanel'
+import { PatientEvidencePanel } from '@/components/patients/PatientEvidencePanel'
 
 export function PatientProfilePage() {
   const { id = '' } = useParams()

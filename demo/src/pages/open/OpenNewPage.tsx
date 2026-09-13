@@ -5,8 +5,8 @@ import type { OpenConfigType } from '../../domain/types'
 import { unauthorizedTagIds } from '../../engine/includeExclude'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { enableOpenConfig, saveOpenConfig } from '../../store/store'
-import { PageHeader } from '../../ui/PageHeader'
-import { Toast } from '../../ui/Modal'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { Toast } from '@/components/shared/Modal'
 import { OpenConfigForm, emptyOpenForm, inputFromForm, type OpenFormValue } from './OpenConfigForm'
 
 export function OpenNewPage() {

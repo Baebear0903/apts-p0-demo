@@ -12,8 +12,8 @@ import {
 } from '../../store/store'
 import { periodLabel } from '../../store/systems'
 import type { ConnectedSystemInput } from '../../store/systems'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
-import { Modal, Toast } from '../../ui/Modal'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
+import { Modal, Toast } from '@/components/shared/Modal'
 import {
   Button,
   Muted,
@@ -25,7 +25,7 @@ import {
   TableHeader,
   TableRow,
   Toolbar,
-} from '../../ui/kit'
+} from '@/components/shared/kit'
 
 const METHOD_OPTIONS: Array<Exclude<DeliveryMethod, 'direct_export'>> = [
   'snapshot_channel',

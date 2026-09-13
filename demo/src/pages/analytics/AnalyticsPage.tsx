@@ -10,7 +10,7 @@ import {
   pendingRecognitionBatches,
   uniquePatientIds,
 } from '../../store/selectors'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
 import {
   Muted,
   PageStack,
@@ -22,7 +22,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../ui/kit'
+} from '@/components/shared/kit'
 
 export function AnalyticsPage() {
   const { state } = useDemoStore()

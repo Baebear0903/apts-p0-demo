@@ -19,7 +19,7 @@ import { RecognitionOverviewPage } from './pages/recognition/RecognitionOverview
 import { TagDetailPage } from './pages/tags/TagDetailPage'
 import { TagListPage } from './pages/tags/TagListPage'
 import { WorkbenchPage } from './pages/WorkbenchPage'
-import { AppLayout } from './ui/AppLayout'
+import { AppLayout } from '@/components/app/AppLayout'
 
 export default function App() {
   return (

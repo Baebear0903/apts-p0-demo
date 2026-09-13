@@ -102,3 +102,16 @@ export function summarizeIncludeExclude(includeSummaries: string[], excludeSumma
   if (excludeSummaries.length === 0) return includePart
   return `${includePart}。排除命中任一：${excludeSummaries.join('；')}`
 }
+
+export function cohortConditionText(state: AppState, includeTagIds: string[], excludeTagIds: string[]): string {
+  const include = includeTagIds.map((id) => tagDisplayName(state, id)).join(' 且 ') || '无'
+  const exclude = excludeTagIds.map((id) => tagDisplayName(state, id)).join('、')
+  return exclude ? `纳入 ${include}；排除命中任一 ${exclude}` : `纳入 ${include}`
+}
+
+export function tagDisplayName(state: AppState, tagId: string): string {
+  const tag = state.tags.find((item) => item.id === tagId)
+  if (!tag) return `${tagId}（已删除）`
+  if (tag.status === 'deleted') return `${tag.name}（已删除标签）`
+  return tag.name
+}

@@ -3,7 +3,7 @@ import { ROUTES, openDetailPath } from '../../app/routes'
 import type { OpenConfigStatus, OpenConfigType } from '../../domain/types'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { displayOpenName, openRuntime, openStatusLabel, openTypeLabel } from '../../store/open'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
 import {
   Button,
   EmptyHint,
@@ -18,7 +18,7 @@ import {
   TableHeader,
   TableRow,
   Toolbar,
-} from '../../ui/kit'
+} from '@/components/shared/kit'
 import { NativeSelectOption } from '@/components/ui/native-select'
 
 export function OpenListPage() {

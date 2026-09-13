@@ -1,3 +1,5 @@
+import { tagDisplayName } from '../domain/logicSummary'
+export { tagDisplayName } from '../domain/logicSummary'
 import type { AppState, Tag } from '../domain/types'
 import { tagAvailability } from './availability'
 import { evaluateTag, isBlocked } from './evaluate'
@@ -13,13 +15,6 @@ export function isTagAuthorized(state: AppState, tagId: string): boolean {
 
 export function unauthorizedTagIds(state: AppState, tagIds: string[]): string[] {
   return [...new Set(tagIds)].filter((id) => !isTagAuthorized(state, id))
-}
-
-export function tagDisplayName(state: AppState, tagId: string): string {
-  const tag = state.tags.find((item) => item.id === tagId)
-  if (!tag) return `${tagId}（已删除）`
-  if (tag.status === 'deleted') return `${tag.name}（已删除标签）`
-  return tag.name
 }
 
 export function includeExcludeAvailability(

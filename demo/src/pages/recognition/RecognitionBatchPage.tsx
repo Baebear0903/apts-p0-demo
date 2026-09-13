@@ -15,10 +15,10 @@ import {
   uniquePatientIds,
 } from '../../store/selectors'
 import { confirmRecognitionBatch, removeFromReview } from '../../store/store'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
-import { Toast } from '../../ui/Modal'
-import { MemberTable, PatientEvidencePanel } from '../patients/PatientEvidencePanel'
-import { Button, Dd, DescriptionList, Dt, EmptyHint, Muted, PageStack, Panel, Toolbar } from '../../ui/kit'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
+import { Toast } from '@/components/shared/Modal'
+import { MemberTable, PatientEvidencePanel } from '@/components/patients/PatientEvidencePanel'
+import { Button, Dd, DescriptionList, Dt, EmptyHint, Muted, PageStack, Panel, Toolbar } from '@/components/shared/kit'
 
 export function RecognitionBatchPage() {
   const { tagId = '', batchId = '' } = useParams()

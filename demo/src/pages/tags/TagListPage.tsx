@@ -4,7 +4,7 @@ import { tagDetailPath, tagNewPath } from '../../app/routes'
 import { tagAvailability } from '../../engine/availability'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { organizationName } from '../../store/selectors'
-import { PageHeader } from '../../ui/PageHeader'
+import { PageHeader } from '@/components/shared/PageHeader'
 import {
   Button,
   EmptyHint,
@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
   Toolbar,
-} from '../../ui/kit'
+} from '@/components/shared/kit'
 import { NativeSelectOption } from '@/components/ui/native-select'
 import type { TagStatus, TagType } from '../../domain/types'
 

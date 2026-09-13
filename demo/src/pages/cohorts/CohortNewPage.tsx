@@ -4,8 +4,8 @@ import { ROUTES, cohortDetailPath } from '../../app/routes'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { patientById, publishedSelectableTags } from '../../store/selectors'
 import { queryIncludeExclude, saveActiveSnapshot, saveDynamicCohort } from '../../store/store'
-import { PageHeader } from '../../ui/PageHeader'
-import { Toast } from '../../ui/Modal'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { Toast } from '@/components/shared/Modal'
 import { includeExcludeAvailability } from '../../engine/includeExclude'
 
 export function CohortNewPage() {

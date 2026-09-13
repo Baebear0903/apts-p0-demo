@@ -5,7 +5,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
-import { Notice } from './kit'
+import { Notice } from '@/components/shared/kit'
 
 export function Modal({
   title,

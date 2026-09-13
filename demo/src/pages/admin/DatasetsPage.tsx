@@ -3,8 +3,8 @@ import { formatDateTime } from '../../demo/clock'
 import { DS_ENCOUNTER_ID, DS_EYE_ASSESSMENT_ID, DS_PATIENT_ID } from '../../domain/ids'
 import type { Dataset } from '../../domain/types'
 import { useDemoStore } from '../../store/DemoStoreContext'
-import { PageHeader, PhoneNote } from '../../ui/PageHeader'
-import { Dd, DescriptionList, Dt, Muted, PageStack, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/kit'
+import { PageHeader, PhoneNote } from '@/components/shared/PageHeader'
+import { Dd, DescriptionList, Dt, Muted, PageStack, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/shared/kit'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 
 export function DatasetsPage() {

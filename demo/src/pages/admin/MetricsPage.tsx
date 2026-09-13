@@ -5,8 +5,8 @@ import { sourceApplicableJudgments } from '../../engine/logicTree'
 import { canChangeMetricBinding } from '../../engine/validate'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { allocateMetricId, deleteMetric, disableMetric, restoreMetric, saveMetric } from '../../store/store'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
-import { Modal, Toast } from '../../ui/Modal'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
+import { Modal, Toast } from '@/components/shared/Modal'
 import {
   Button,
   Panel,
@@ -17,7 +17,7 @@ import {
   TableHeader,
   TableRow,
   Toolbar,
-} from '../../ui/kit'
+} from '@/components/shared/kit'
 
 const JUDGMENT_LABEL: Record<JudgmentType, string> = {
   direct_compare: '直接比较',

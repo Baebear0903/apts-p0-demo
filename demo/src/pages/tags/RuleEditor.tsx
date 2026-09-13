@@ -25,7 +25,7 @@ import {
   updateNode,
   wrapIfNeeded,
 } from '../../engine/logicTree'
-import { Button, Panel, Toolbar } from '../../ui/kit'
+import { Button, Panel, Toolbar } from '@/components/shared/kit'
 
 const JUDGMENT_LABEL: Record<JudgmentType, string> = {
   direct_compare: '直接比较',

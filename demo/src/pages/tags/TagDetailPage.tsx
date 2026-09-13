@@ -19,8 +19,8 @@ import {
   setTagAutoRecognition,
   upsertTag,
 } from '../../store/store'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
-import { Modal, Toast } from '../../ui/Modal'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
+import { Modal, Toast } from '@/components/shared/Modal'
 import {
   Button,
   CheckRow,
@@ -34,7 +34,7 @@ import {
   PageStack,
   Panel,
   Toolbar,
-} from '../../ui/kit'
+} from '@/components/shared/kit'
 import { Input } from '@/components/ui/input'
 import { NativeSelectOption } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'

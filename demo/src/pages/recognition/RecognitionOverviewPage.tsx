@@ -13,8 +13,8 @@ import {
   uniquePatientIds,
 } from '../../store/selectors'
 import { generateAutoRecognitionBatch } from '../../store/store'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
-import { Toast } from '../../ui/Modal'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
+import { Toast } from '@/components/shared/Modal'
 import {
   Button,
   EmptyHint,
@@ -26,7 +26,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../ui/kit'
+} from '@/components/shared/kit'
 
 export function RecognitionOverviewPage() {
   const { state, patch } = useDemoStore()

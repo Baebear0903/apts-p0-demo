@@ -19,10 +19,10 @@ import {
   refreshDynamicCohort,
   updateDynamicCohortConditions,
 } from '../../store/store'
-import { PageHeader } from '../../ui/PageHeader'
-import { Modal, Toast } from '../../ui/Modal'
-import { Button, Muted, PageStack, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Toolbar } from '../../ui/kit'
-import { cohortConditionText } from '../patients/PatientEvidencePanel'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { Modal, Toast } from '@/components/shared/Modal'
+import { Button, Muted, PageStack, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow, Toolbar } from '@/components/shared/kit'
+import { cohortConditionText } from '@/domain/logicSummary'
 
 export function CohortDetailPage() {
   const { id = '' } = useParams()

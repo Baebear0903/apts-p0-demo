@@ -1,8 +1,8 @@
 import { isTagAuthorized } from '../../engine/includeExclude'
 import { useDemoStore } from '../../store/DemoStoreContext'
 import { organizationName } from '../../store/selectors'
-import { PageHeader, StatusText } from '../../ui/PageHeader'
-import { Muted, PageStack, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../ui/kit'
+import { PageHeader, StatusText } from '@/components/shared/PageHeader'
+import { Muted, PageStack, Panel, Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/shared/kit'
 
 const DEMO_ROLES = [
   { name: '标签维护', scope: '标签定义、试算、发布与自动识别配置' },

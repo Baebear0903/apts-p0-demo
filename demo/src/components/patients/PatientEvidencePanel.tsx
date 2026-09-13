@@ -1,19 +1,19 @@
 import { useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { formatDateTime } from '../../demo/clock'
-import type { AppState, EvidenceSlot, Hit, RemoveReasonCode, Tag } from '../../domain/types'
-import { latestEyeScoreSlot } from '../../engine/evidence'
-import { evaluateTag, isBlocked } from '../../engine/evaluate'
-import { isTagAuthorized, tagDisplayName } from '../../engine/includeExclude'
-import { walkTagRefs } from '../../engine/availability'
+import { formatDateTime } from '@/demo/clock'
+import type { AppState, EvidenceSlot, Hit, RemoveReasonCode, Tag } from '@/domain/types'
+import { latestEyeScoreSlot } from '@/engine/evidence'
+import { evaluateTag, isBlocked } from '@/engine/evaluate'
+import { isTagAuthorized } from '@/engine/includeExclude'
+import { walkTagRefs } from '@/engine/availability'
 import {
   currentTagEvalStatus,
   latestEncounter,
   patientById,
   showsCurrentNotSatisfy,
   tagById,
-} from '../../store/selectors'
-import { PhoneNote, StatusText } from '../../ui/PageHeader'
+} from '@/store/selectors'
+import { PhoneNote, StatusText } from '@/components/shared/PageHeader'
 import {
   Button,
   Dd,
@@ -33,7 +33,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../ui/kit'
+} from '@/components/shared/kit'
 import { Input } from '@/components/ui/input'
 import { NativeSelectOption } from '@/components/ui/native-select'
 
@@ -321,12 +321,6 @@ function otherAuthorizedHits(state: AppState, patientId: string, excludeTagId?: 
     const result = evaluateTag(state, tag, state.clock, patientId)
     return result === 'satisfy'
   })
-}
-
-export function cohortConditionText(state: AppState, includeTagIds: string[], excludeTagIds: string[]): string {
-  const include = includeTagIds.map((id) => tagDisplayName(state, id)).join(' 且 ') || '无'
-  const exclude = excludeTagIds.map((id) => tagDisplayName(state, id)).join('、')
-  return exclude ? `纳入 ${include}；排除命中任一 ${exclude}` : `纳入 ${include}`
 }
 
 export function PatientLink({
