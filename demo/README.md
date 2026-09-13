@@ -5,8 +5,8 @@
 ## 启动
 
 ```bash
-cd "/Users/yangyinglin/AI playground/APTS演示demo/demo"
-npm install
+cd apts-p0-demo/demo
+npm ci
 npm run dev
 ```
 
@@ -33,3 +33,5 @@ npm run build
 4. 数据开放：基于刚确认的快照新建并启用「眼科复诊名单交付」→ 授权已启用 → 直接导出 CSV。旁注不表示对方已收到数据。
 
 侧栏底部「演示控制」默关：重置、推进时钟、模拟失败、按钮权限、规则能力样例。
+
+部署与第三方获取代码见[仓库入口](../README.md)。生产站点使用 `#/` 路由；分享页面时保留完整地址。

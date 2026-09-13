@@ -36,3 +36,7 @@
 在 `demo/` 运行 `npm test`、`npm run build`；共享组件和路由修改后在浏览器检查受影响页面、交互和刷新。测试与实现就近维护。
 
 根目录 `acceptance.md`、`implementation-progress.md` 和 `progress/` 保存首次 P0 搭建证据；新验证记录按本次实际结果追加。`.scratch/` 仅在需要本地任务票据时创建。
+
+## 发布入口
+
+`demo/src/main.tsx` 使用 HashRouter，`demo/vite.config.ts` 使用相对资源路径。`.github/workflows/pages.yml` 负责全新安装、测试、构建与 main 分支自动部署；发布步骤与访问范围见 README。

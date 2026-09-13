@@ -1,6 +1,6 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter } from 'react-router-dom'
+import { HashRouter } from 'react-router-dom'
 import App from './App'
 import './index.css'
 import { DemoStoreProvider } from './store/DemoStoreContext'
@@ -12,10 +12,10 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+    <HashRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <DemoStoreProvider>
         <App />
       </DemoStoreProvider>
-    </BrowserRouter>
+    </HashRouter>
   </StrictMode>,
 )

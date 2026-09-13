@@ -79,9 +79,9 @@ export function AppLayout() {
   return (
     <TooltipProvider>
       <SidebarProvider>
-        <a className="skip-link bg-card text-foreground absolute top-[-40px] left-3 z-30 rounded-lg px-3 py-2 focus:top-3" href="#main-content">
+        <button type="button" className="skip-link bg-card text-foreground absolute top-[-40px] left-3 z-30 rounded-lg px-3 py-2 focus:top-3" onClick={() => document.getElementById('main-content')?.focus()}>
           跳到主内容
-        </a>
+        </button>
         <Sidebar className="border-sidebar-border border-r bg-sidebar">
           <SidebarHeader className="border-b px-3 py-3">
             <div className="px-1">
@@ -146,7 +146,7 @@ export function AppLayout() {
             <DemoControls />
           </SidebarFooter>
         </Sidebar>
-        <SidebarInset id="main-content" className="bg-background">
+        <SidebarInset id="main-content" tabIndex={-1} className="bg-background">
           <header className="bg-card flex h-14 items-center justify-between border-b px-6">
             <div className="flex min-w-0 items-center gap-3 text-sm">
               <SidebarTrigger className="text-muted-foreground" />
