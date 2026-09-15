@@ -39,7 +39,7 @@ npm install --cache "/Users/yangyinglin/AI playground/APTS演示demo/demo/.npm-c
 
 ## 当前阶段
 
-**阶段 1–4 已通过主会话验收。最终 Goal 达成（功能实现完成；真实浏览器 200% 缩放为工具受限未验证）。**
+**本轮缺陷与视觉整改已完成，并已于 2026-09-15 从无应用存储的首次打开状态完成最终复验。**
 
 ## 实际基线
 
@@ -47,16 +47,16 @@ npm install --cache "/Users/yangyinglin/AI playground/APTS演示demo/demo/.npm-c
 
 交接：`progress/phase-1.md` … `phase-4.md`。
 
-主会话独立证据：`trialCompute` 11:00 五人；健康活动三人；`buildSnapshotCsv`/`downloadOpenCsv` 列名与电话；订阅现算李强／林晓／吴平。`npm test` 91 passed。
+本轮复验证据：工作台首次打开 `1/6/2/2/3/3`；李强触发 18／当前 7；复核确认生成五人 `SNAP-004`；健康活动三人；开放配置 `OPEN-006`／`OPEN-007`；浏览器下载处理生成的 CSV Blob 与 `SNAP-004` 五人一致。
 
 ## 覆盖状态
 
-第 14 章完整／占位／只读项均已验证。附录「可用性 200% 真实浏览器缩放」为工具受限未验证。见 `acceptance.md`。
+第 14 章完整／占位／只读项、第 7 章规则能力和附录关键场景均已恢复为“已验证”。WB-06／ANL-01 按修订规格提供完整只读分析。见 `acceptance.md`。
 
 ## 阻塞项
 
-本机 Chrome/Chromium headless 因沙箱 SIGSEGV 无法截图与 200% 缩放手测。页面内容由 RTL 渲染真实 `App` 覆盖。
+当前无已确认阻塞。构建仅有既有的单包超过 500 kB 警告；本轮未把 CSV Blob 验收表述为系统“下载”目录文件落盘验收。
 
 ## 下一步
 
-无功能实施项。按 README 启动演示。
+等待用户决定是否按工程约定拆分提交；本轮未提交或推送。

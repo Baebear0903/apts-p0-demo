@@ -1,3 +1,47 @@
+# Coding Guidelines
+
+These guidelines apply in addition to the global working guidelines. Merge with project-specific instructions as needed.
+
+## 1. Minimum Code
+
+**Write only the code the task requires. Nothing speculative.**
+
+- No abstractions for single-use code.
+- No flexibility or configurability that was not requested.
+- No error handling for impossible scenarios.
+- Prefer existing patterns and dependencies.
+- If the implementation is much larger than the problem, simplify it.
+
+## 2. Surgical Changes
+
+**Touch only what you must. Clean up only your own mess.**
+
+When editing existing code:
+
+- Do not improve adjacent code, comments, or formatting.
+- Do not refactor things that are not broken.
+- Match the existing style, even if you would do it differently.
+- Mention unrelated issues; do not fix them unless asked.
+
+When your changes create orphans:
+
+- Remove imports, variables, and functions made unused by your changes.
+- Do not remove pre-existing dead code unless asked.
+
+The test: Every changed line should trace directly to the user's request.
+
+## 3. Verify the Change
+
+**Turn code changes into observable checks.**
+
+- Bug fix → reproduce it, fix it, verify it.
+- New behavior → test the expected and invalid paths.
+- Refactor → confirm behavior before and after.
+- Run the most relevant available checks.
+- Do not claim tests passed unless they were actually run.
+
+
+
 # APTS 工程约定
 
 - 修改前先读 [code-map.md](code-map.md)，再读取涉及功能的产品规格章节；术语以 [CONTEXT.md](CONTEXT.md) 为准。
