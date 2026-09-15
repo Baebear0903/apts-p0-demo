@@ -125,7 +125,7 @@ export function upsertMetric(state: AppState, metric: Metric): AppState {
     const compatibility = canChangeMetricBinding(state, existing, metric)
     if (!compatibility.ok) return state
   }
-  const errors = validateMetricDraft(metric)
+  const errors = validateMetricDraft(metric, state)
   if (errors.length > 0) return state
   const metrics = existing
     ? state.metrics.map((item) => (item.id === metric.id ? metric : item))
@@ -140,7 +140,7 @@ export function saveMetric(
   if (!state.session.permissions.buttons.metricMaintain) {
     return { ok: false, errors: ['无指标维护权限'] }
   }
-  const errors = validateMetricDraft(metric)
+  const errors = validateMetricDraft(metric, state)
   const existing = state.metrics.find((item) => item.id === metric.id)
   if (existing) {
     const compatibility = canChangeMetricBinding(state, existing, metric)
@@ -276,7 +276,7 @@ export function deleteTag(
   }
 }
 
-export { generateAutoRecognitionBatch, removeFromReview, confirmRecognitionBatch } from './recognition'
+export { generateAutoRecognitionBatch, removeFromReview, undoRemoveFromReview, confirmRecognitionBatch } from './recognition'
 export {
   queryIncludeExclude,
   saveDynamicCohort,

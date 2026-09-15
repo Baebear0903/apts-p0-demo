@@ -452,6 +452,7 @@ function measureMetrics(): Metric[] {
       derived: {
         function: 'arithmetic',
         inputMetricIds: ['MET-WEIGHT', 'MET-HEIGHT'],
+        association: 'same_observation',
         formula: '$0 / ($1 * $1)',
         resultUnit: 'kg/m²',
       },
@@ -500,7 +501,14 @@ function measureMetrics(): Metric[] {
       catalog: '衍生指标',
       kind: 'derived',
       status: 'active',
-      derived: { function: 'date_diff', inputMetricIds: ['MET-DT-START', 'MET-DT-END'], dateDiffUnit: 'days' },
+      derived: {
+        function: 'date_diff',
+        inputMetricIds: ['MET-DT-START', 'MET-DT-END'],
+        dateStartMetricId: 'MET-DT-START',
+        dateEndMetricId: 'MET-DT-END',
+        association: 'same_patient_latest',
+        dateDiffUnit: 'days',
+      },
       valueType: 'number',
       grain: '患者',
       patientKey: 'patient_id',
@@ -515,7 +523,7 @@ function measureMetrics(): Metric[] {
       catalog: '衍生指标' as const,
       kind: 'derived' as const,
       status: 'active' as const,
-      derived: { function: fn, inputMetricIds: [MET_EYE_SCORE_ID], windowDays: 30 },
+      derived: { function: fn, inputMetricIds: [MET_EYE_SCORE_ID], observationGrain: '采集' as const, windowDays: 30 },
       valueType: 'number' as const,
       grain: '患者' as const,
       patientKey: 'patient_id',
@@ -549,6 +557,24 @@ describe('衍生算术／日期差／窗口统计', () => {
       measures: partition.measures.map((item) => (item.id === 'M-RULE-BMI-H' ? { ...item, value: 0 } : item)),
     }))
     expect(metricValue(zeroHeight, 'MET-BMI', 'RULE-BMI', zeroHeight.clock).status).toBe('unknown')
+
+    const differentObservation = updateRuleSampleWorkingCopy(state, (partition) => ({
+      ...partition,
+      measures: partition.measures.map((item) =>
+        item.id === 'M-RULE-BMI-H' ? { ...item, observationId: 'O-RULE-BMI-OTHER' } : item,
+      ),
+    }))
+    expect(metricValue(differentObservation, 'MET-BMI', 'RULE-BMI', differentObservation.clock).status).toBe('unknown')
+
+    const latestEach: AppState = {
+      ...differentObservation,
+      metrics: differentObservation.metrics.map((item) =>
+        item.id === 'MET-BMI' && item.derived
+          ? { ...item, derived: { ...item.derived, association: 'same_patient_latest' } }
+          : item,
+      ),
+    }
+    expect(metricValue(latestEach, 'MET-BMI', 'RULE-BMI', latestEach.clock).status).toBe('value')
   })
 
   it('日期差 2 天，交换为 -2，缺一端 unknown', () => {
@@ -564,7 +590,17 @@ describe('衍生算术／日期差／窗口统计', () => {
       ...state,
       metrics: state.metrics.map((item) =>
         item.id === 'MET-DATE-DIFF'
-          ? { ...item, derived: { function: 'date_diff', inputMetricIds: ['MET-DT-END', 'MET-DT-START'] } }
+          ? {
+              ...item,
+              derived: {
+                function: 'date_diff',
+                inputMetricIds: ['MET-DT-END', 'MET-DT-START'],
+                dateStartMetricId: 'MET-DT-END',
+                dateEndMetricId: 'MET-DT-START',
+                association: 'same_patient_latest',
+                dateDiffUnit: 'days',
+              },
+            }
           : item,
       ),
     }
@@ -606,6 +642,18 @@ describe('衍生算术／日期差／窗口统计', () => {
     expect(metricValue(emptied, 'MET-STAT-SUM', 'RULE-STAT', emptied.clock).status).toBe('unknown')
     expect(metricValue(emptied, 'MET-STAT-MAX', 'RULE-STAT', emptied.clock).status).toBe('unknown')
     expect(metricValue(emptied, 'MET-STAT-MIN', 'RULE-STAT', emptied.clock).status).toBe('unknown')
+
+    const filtered: AppState = {
+      ...state,
+      metrics: state.metrics.map((item) =>
+        item.id === 'MET-STAT-AVG' && item.derived
+          ? { ...item, derived: { ...item.derived, filter: { op: 'gte', value: 20 } } }
+          : item,
+      ),
+    }
+    const filteredAverage = metricValue(filtered, 'MET-STAT-AVG', 'RULE-STAT', filtered.clock)
+    expect(filteredAverage.status).toBe('value')
+    if (filteredAverage.status === 'value') expect(filteredAverage.value).toBe(20)
   })
 })
 

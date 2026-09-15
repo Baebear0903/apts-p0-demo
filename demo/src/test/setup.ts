@@ -1,5 +1,8 @@
 import '@testing-library/jest-dom/vitest'
 
+if (typeof window !== 'undefined') window.scrollTo = () => {}
+if (typeof HTMLElement !== 'undefined') HTMLElement.prototype.scrollTo = () => {}
+
 if (typeof URL.createObjectURL !== 'function') {
   URL.createObjectURL = () => 'blob:mock'
 }

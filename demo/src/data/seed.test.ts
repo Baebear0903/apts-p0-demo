@@ -7,7 +7,7 @@ import {
   TAG_EYE_HIGH_ID,
   TAG_EYE_OP_ID,
 } from '../domain/ids'
-import { hitsOfBatch, uniquePatientIds } from '../store/selectors'
+import { hitsOfBatch, uniquePatientIds, workbenchStats } from '../store/selectors'
 import { createInitialState } from './seed'
 
 describe('createInitialState', () => {
@@ -33,6 +33,14 @@ describe('createInitialState', () => {
     expect(hits.map((hit) => hit.patientId)).toEqual([...INITIAL_HIT_PATIENT_IDS])
     expect(uniquePatientIds(hits)).toEqual([...INITIAL_HIT_PATIENT_IDS])
     expect(hits).toHaveLength(INITIAL_HIT_PATIENT_IDS.length)
+    expect(workbenchStats(state)).toEqual({
+      pendingRecognitionBatches: 1,
+      pendingRecognitionPatients: 6,
+      dynamicCohorts: 2,
+      enabledOpenConfigs: 2,
+      publishedTags: 3,
+      snapshots: 3,
+    })
   })
 
   it('初始批次证据只使用计算时点已入库观察，不含计算后评分', () => {

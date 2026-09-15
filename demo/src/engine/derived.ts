@@ -1,6 +1,6 @@
 import { addDays, daysBetween } from '../demo/clock'
-import type { AppState, DerivedFunction, Metric } from '../domain/types'
-import { asNumber } from './compare'
+import type { AppState, DerivedMetricSpec, Metric } from '../domain/types'
+import { asNumber, compareValues } from './compare'
 import { isEligible, isJudgeable, recordsForMetric, sortLatestFirst } from './records'
 import type { DataRecord, EvalContext, MetricValueResult, QueryFail } from './types'
 import { buildEvalContext, isFail, QUERY_FAIL_REASON } from './types'
@@ -53,51 +53,51 @@ function derivedValue(ctx: EvalContext, metric: Metric, patientId: string): Metr
   }
 
   if (spec.function === 'arithmetic') {
-    return arithmeticValue(ctx, patientId, spec.inputMetricIds, spec.formula ?? '')
+    return arithmeticValue(ctx, patientId, spec, spec.formula ?? '')
   }
   if (spec.function === 'date_diff') {
-    return dateDiffValue(ctx, patientId, spec.inputMetricIds)
+    return dateDiffValue(ctx, patientId, spec)
   }
-  return windowStatValue(ctx, spec.inputMetricIds[0], spec.function, spec.windowDays ?? 30, patientId)
+  return windowStatValue(ctx, spec, patientId)
 }
 
 function windowStatValue(
   ctx: EvalContext,
-  inputMetricId: string | undefined,
-  fn: DerivedFunction,
-  windowDays: number,
+  spec: DerivedMetricSpec,
   patientId: string,
 ): MetricValueResult {
+  const inputMetricId = spec.inputMetricIds[0]
   if (!inputMetricId) return { status: 'unknown' }
   const input = ctx.metrics.find((item) => item.id === inputMetricId)
   if (!input) return { status: 'unknown' }
   const records = recordsForMetric(ctx, input, patientId)
   if (isFail(records)) return { status: 'error', error: records.reason }
-  const start = addDays(ctx.computeAt, -windowDays)
+  const start = addDays(ctx.computeAt, -(spec.windowDays ?? 30))
   const numbers = records
     .filter((record) => isEligible(record, ctx.computeAt) && isJudgeable(record))
     .filter((record) => inInterval(record.businessTime, { start, end: ctx.computeAt }, ctx.computeAt))
+    .filter((record) => !spec.filter || compareValues(record.value, spec.filter.op, spec.filter.value, input.valueType) === 'satisfy')
     .map((record) => asNumber(record.value))
     .filter((value): value is number => value !== null)
 
-  if (fn === 'count') return { status: 'value', value: numbers.length }
+  if (spec.function === 'count') return { status: 'value', value: numbers.length }
   if (numbers.length === 0) return { status: 'unknown' }
-  if (fn === 'sum') return { status: 'value', value: numbers.reduce((acc, item) => acc + item, 0) }
-  if (fn === 'avg') {
+  if (spec.function === 'sum') return { status: 'value', value: numbers.reduce((acc, item) => acc + item, 0) }
+  if (spec.function === 'avg') {
     return { status: 'value', value: numbers.reduce((acc, item) => acc + item, 0) / numbers.length }
   }
-  if (fn === 'max') return { status: 'value', value: Math.max(...numbers) }
-  if (fn === 'min') return { status: 'value', value: Math.min(...numbers) }
+  if (spec.function === 'max') return { status: 'value', value: Math.max(...numbers) }
+  if (spec.function === 'min') return { status: 'value', value: Math.min(...numbers) }
   return { status: 'unknown' }
 }
 
 function arithmeticValue(
   ctx: EvalContext,
   patientId: string,
-  inputMetricIds: string[],
+  spec: DerivedMetricSpec,
   formula: string,
 ): MetricValueResult {
-  const values = associatedNumbers(ctx, patientId, inputMetricIds)
+  const values = associatedNumbers(ctx, patientId, spec.inputMetricIds, spec.association)
   if (isFail(values)) return { status: 'error', error: values.reason }
   if (!values) return { status: 'unknown' }
   const result = evaluateArithmetic(formula, values)
@@ -105,11 +105,11 @@ function arithmeticValue(
   return { status: 'value', value: result }
 }
 
-function dateDiffValue(ctx: EvalContext, patientId: string, inputMetricIds: string[]): MetricValueResult {
-  const startId = inputMetricIds[0]
-  const endId = inputMetricIds[1]
+function dateDiffValue(ctx: EvalContext, patientId: string, spec: DerivedMetricSpec): MetricValueResult {
+  const startId = spec.dateStartMetricId ?? spec.inputMetricIds[0]
+  const endId = spec.dateEndMetricId ?? spec.inputMetricIds[1]
   if (!startId || !endId) return { status: 'unknown' }
-  const pair = associatedDatetimes(ctx, patientId, startId, endId)
+  const pair = associatedDatetimes(ctx, patientId, startId, endId, spec.association)
   if (isFail(pair)) return { status: 'error', error: pair.reason }
   if (!pair) return { status: 'unknown' }
   return { status: 'value', value: daysBetween(pair[0], pair[1]) }
@@ -119,19 +119,10 @@ function associatedNumbers(
   ctx: EvalContext,
   patientId: string,
   inputMetricIds: string[],
+  association: DerivedMetricSpec['association'],
 ): number[] | null | QueryFail {
-  const loaded: DataRecord[][] = []
-  for (const id of inputMetricIds) {
-    const metric = ctx.metrics.find((item) => item.id === id)
-    if (!metric) return null
-    const records = recordsForMetric(ctx, metric, patientId)
-    if (isFail(records)) return records
-    const judgeable = sortLatestFirst(records.filter(isJudgeable))
-    if (judgeable.length === 0) return null
-    loaded.push(judgeable)
-  }
-  const joined = joinByObservation(loaded)
-  const chosen = joined ?? latestOfEach(loaded)
+  const chosen = associatedRecords(ctx, patientId, inputMetricIds, association)
+  if (isFail(chosen)) return chosen
   if (!chosen) return null
   const numbers = chosen.map((record) => asNumber(record.value))
   if (numbers.some((item) => item === null)) return null
@@ -143,19 +134,32 @@ function associatedDatetimes(
   patientId: string,
   startId: string,
   endId: string,
+  association: DerivedMetricSpec['association'],
 ): [string, string] | null | QueryFail {
-  const startMetric = ctx.metrics.find((item) => item.id === startId)
-  const endMetric = ctx.metrics.find((item) => item.id === endId)
-  if (!startMetric || !endMetric) return null
-  const startRecords = recordsForMetric(ctx, startMetric, patientId)
-  if (isFail(startRecords)) return startRecords
-  const endRecords = recordsForMetric(ctx, endMetric, patientId)
-  if (isFail(endRecords)) return endRecords
-  const startLatest = sortLatestFirst(startRecords.filter(isJudgeable))[0]
-  const endLatest = sortLatestFirst(endRecords.filter(isJudgeable))[0]
-  if (!startLatest || !endLatest) return null
-  if (typeof startLatest.value !== 'string' || typeof endLatest.value !== 'string') return null
-  return [startLatest.value, endLatest.value]
+  const chosen = associatedRecords(ctx, patientId, [startId, endId], association)
+  if (isFail(chosen)) return chosen
+  if (!chosen || typeof chosen[0]?.value !== 'string' || typeof chosen[1]?.value !== 'string') return null
+  return [chosen[0].value, chosen[1].value]
+}
+
+function associatedRecords(
+  ctx: EvalContext,
+  patientId: string,
+  inputMetricIds: string[],
+  association: DerivedMetricSpec['association'],
+): DataRecord[] | null | QueryFail {
+  const loaded: DataRecord[][] = []
+  for (const id of inputMetricIds) {
+    const metric = ctx.metrics.find((item) => item.id === id)
+    if (!metric) return null
+    const records = recordsForMetric(ctx, metric, patientId)
+    if (isFail(records)) return records
+    const judgeable = sortLatestFirst(records.filter(isJudgeable))
+    if (judgeable.length === 0) return null
+    loaded.push(judgeable)
+  }
+  if (loaded.length === 1) return latestOfEach(loaded)
+  return association === 'same_patient_latest' ? latestOfEach(loaded) : joinByObservation(loaded)
 }
 
 function joinByObservation(loaded: DataRecord[][]): DataRecord[] | null {

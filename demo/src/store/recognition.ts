@@ -81,6 +81,39 @@ export function removeFromReview(
   return { ok: true, state: { ...state, reviewRecords: [...state.reviewRecords, record] } }
 }
 
+export function undoRemoveFromReview(
+  state: AppState,
+  batchId: string,
+  patientId: string,
+): { ok: true; state: AppState } | { ok: false; reason: string } {
+  if (!state.session.permissions.buttons.recognitionConfirm) return { ok: false, reason: '无复核确认权限' }
+  const batch = state.batches.find((item) => item.id === batchId)
+  if (!batch || !isBatchReviewable(state, batch)) return { ok: false, reason: '当前批次不可复核' }
+  const hasRemoval = state.reviewRecords.some(
+    (item) =>
+      item.batchId === batchId &&
+      item.scopeId === state.currentScopeId &&
+      item.patientId === patientId &&
+      item.action === 'remove',
+  )
+  if (!hasRemoval) return { ok: false, reason: '该患者尚未移除' }
+  return {
+    ok: true,
+    state: {
+      ...state,
+      reviewRecords: state.reviewRecords.filter(
+        (item) =>
+          !(
+            item.batchId === batchId &&
+            item.scopeId === state.currentScopeId &&
+            item.patientId === patientId &&
+            item.action === 'remove'
+          ),
+      ),
+    },
+  }
+}
+
 export function confirmRecognitionBatch(
   state: AppState,
   batchId: string,

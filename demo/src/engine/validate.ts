@@ -8,9 +8,14 @@ export function validateLogic(state: AppState, node: RuleLogic, tagType: TagType
 }
 
 function validateNode(state: AppState, node: RuleNode, tagType: TagType, isRoot: boolean): string[] {
-  if (node.kind === 'group' || node.kind === 'record_group') {
+  if (node.kind === 'group') {
     if (node.children.length === 0) return [isRoot ? '空规则不能发布或保存为生效修改' : '空组不能发布或保存为生效修改']
     return node.children.flatMap((child) => validateNode(state, child, tagType, false))
+  }
+  if (node.kind === 'record_group') {
+    const errors = validateRecordGroupOuter(node.outer)
+    if (node.children.length === 0) errors.push(isRoot ? '空规则不能发布或保存为生效修改' : '空组不能发布或保存为生效修改')
+    return [...errors, ...node.children.flatMap((child) => validateNode(state, child, tagType, false))]
   }
   if (node.kind === 'tag_ref') {
     if (tagType !== 'composite') return ['仅复合标签可引用基础标签']
@@ -68,6 +73,29 @@ function validateNode(state: AppState, node: RuleNode, tagType: TagType, isRoot:
   return errors
 }
 
+function validateRecordGroupOuter(judgment: Extract<RuleNode, { kind: 'record_group' }>['outer']): string[] {
+  const errors: string[] = []
+  if (judgment.type === 'count' && (!Number.isInteger(judgment.value) || judgment.value < 0)) {
+    errors.push('记录条件组的次数阈值须为非负整数')
+  }
+  if (
+    (judgment.type === 'recent_n' || judgment.type === 'consecutive_dates') &&
+    (!Number.isInteger(judgment.n) || judgment.n < 1)
+  ) {
+    errors.push('记录条件组的 N 须为正整数')
+  }
+  if ('value' in judgment && !judgmentHasThreshold(judgment)) {
+    errors.push('记录条件组的外层阈值必填')
+  }
+  if (judgment.window.kind === 'event' && (judgment.window.offsetBeforeDays < 0 || judgment.window.offsetAfterDays < 0)) {
+    errors.push('记录条件组的事件偏移天数不能为负')
+  }
+  if (judgment.window.kind === 'fixed' && judgment.window.start > judgment.window.end) {
+    errors.push('记录条件组的固定窗口起点不得晚于终点')
+  }
+  return errors
+}
+
 export function validateTagBasics(tag: Pick<Tag, 'name' | 'responsibleOrgId' | 'suggestion'>): string[] {
   const errors: string[] = []
   const name = tag.name.trim()
@@ -89,7 +117,7 @@ export function validateTag(state: AppState, tag: Tag, mode: 'draft' | 'strict')
   return errors
 }
 
-export function validateMetricDraft(metric: Metric): string[] {
+export function validateMetricDraft(metric: Metric, state?: AppState): string[] {
   const errors: string[] = []
   if (metric.name.trim().length < 1 || metric.name.trim().length > 100) errors.push('名称去首尾空白后须为 1 至 100 字')
   if (metric.applicableJudgments.length === 0) errors.push('无判断方式不能保存')
@@ -100,11 +128,48 @@ export function validateMetricDraft(metric: Metric): string[] {
     if (!metric.derived) errors.push('衍生指标须配置计算关系')
     else {
       if (metric.derived.inputMetricIds.length === 0) errors.push('衍生指标须选择输入')
+      if (new Set(metric.derived.inputMetricIds).size !== metric.derived.inputMetricIds.length) {
+        errors.push('衍生指标输入不能重复')
+      }
       if (metric.derived.function === 'arithmetic' && !metric.derived.formula?.trim()) {
         errors.push('算术衍生须填写公式')
       }
-      if (metric.derived.function === 'date_diff' && metric.derived.inputMetricIds.length < 2) {
-        errors.push('日期差须指定起止输入')
+      if (metric.derived.function === 'arithmetic' && metric.derived.inputMetricIds.length > 1 && !metric.derived.association) {
+        errors.push('算术衍生须声明多输入取值与关联方式')
+      }
+      if (metric.derived.function === 'date_diff') {
+        const { dateStartMetricId, dateEndMetricId } = metric.derived
+        if (!dateStartMetricId || !dateEndMetricId || metric.derived.inputMetricIds.length !== 2) {
+          errors.push('日期差须分别指定起点和终点')
+        }
+        if (dateStartMetricId && dateStartMetricId === dateEndMetricId) errors.push('日期差起点和终点不能相同')
+        if (!metric.derived.dateDiffUnit) errors.push('日期差须指定结果单位')
+        if (!metric.derived.association) errors.push('日期差须声明输入关联方式')
+      }
+      if (!['arithmetic', 'date_diff'].includes(metric.derived.function)) {
+        if (metric.derived.inputMetricIds.length !== 1) errors.push('窗口统计只能选择一个输入指标')
+        if (!Number.isInteger(metric.derived.windowDays) || (metric.derived.windowDays ?? 0) < 1) {
+          errors.push('窗口天数须为正整数')
+        }
+        if (!metric.derived.observationGrain) errors.push('窗口统计须指定观察粒度')
+        if (metric.derived.filter && (metric.derived.filter.value === '' || metric.derived.filter.value == null)) {
+          errors.push('窗口过滤已开启时过滤值必填')
+        }
+      }
+      if (state) {
+        const inputs = metric.derived.inputMetricIds
+          .map((id) => state.metrics.find((item) => item.id === id))
+          .filter((item): item is Metric => Boolean(item))
+        if (inputs.length !== metric.derived.inputMetricIds.length) errors.push('衍生指标存在无效输入')
+        if (metric.derived.association === 'same_observation' && inputs.some((item) => !item.observationKey && !item.associatedObservationKey)) {
+          errors.push('选择的输入缺少观察关联键，不能按同次观察计算')
+        }
+        if (metric.derived.function === 'date_diff' && inputs.some((item) => item.valueType !== 'datetime')) {
+          errors.push('日期差起止输入必须是日期时间指标')
+        }
+        if (metric.derived.observationGrain && inputs[0] && inputs[0].grain !== metric.derived.observationGrain) {
+          errors.push('观察粒度必须与输入指标粒度一致')
+        }
       }
     }
   }

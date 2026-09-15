@@ -35,8 +35,10 @@ export function Modal({
 
 export function Toast({ message, tone = 'error' }: { message: string; tone?: 'error' | 'ok' }) {
   return (
-    <Notice tone={tone === 'ok' ? 'ok' : 'error'} role="status">
-      {message}
-    </Notice>
+    <div className="pointer-events-none fixed top-4 right-4 z-[70] w-[min(28rem,calc(100vw-2rem))]" aria-live="polite">
+      <Notice tone={tone === 'ok' ? 'ok' : 'error'} role="status" className="bg-card pointer-events-auto shadow-lg">
+        {message}
+      </Notice>
+    </div>
   )
 }

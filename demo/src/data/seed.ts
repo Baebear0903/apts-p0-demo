@@ -261,6 +261,7 @@ function createMetrics(): Metric[] {
       derived: {
         function: 'avg',
         inputMetricIds: [MET_EYE_SCORE_ID],
+        observationGrain: '采集',
         windowDays: 30,
         formula: '平均值(眼表评分, 30 天)',
         resultUnit: '分',

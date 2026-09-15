@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   BarChart3,
@@ -76,6 +77,12 @@ export function AppLayout() {
   const inRuleSample = state.session.mode === 'ruleSamples'
   const pageLabel = currentPageLabel(location.pathname)
 
+  useEffect(() => {
+    window.scrollTo?.({ top: 0, left: 0 })
+    document.getElementById('main-content')?.scrollTo?.({ top: 0, left: 0 })
+    document.querySelector<HTMLElement>('[data-page-title]')?.focus()
+  }, [location.pathname])
+
   return (
     <TooltipProvider>
       <SidebarProvider>
@@ -86,7 +93,7 @@ export function AppLayout() {
           <SidebarHeader className="border-b px-3 py-3">
             <div className="px-1">
               <p className="text-[15px] font-semibold tracking-tight">APTS</p>
-              <p className="text-muted-foreground mt-0.5 text-[11px] leading-snug">重点患者识别与连续性管理</p>
+              <p className="text-muted-foreground mt-0.5 text-xs leading-snug">重点患者识别与连续性管理</p>
             </div>
           </SidebarHeader>
           <SidebarContent className="py-2">
@@ -147,7 +154,7 @@ export function AppLayout() {
           </SidebarFooter>
         </Sidebar>
         <SidebarInset id="main-content" tabIndex={-1} className="bg-background">
-          <header className="bg-card flex h-14 items-center justify-between border-b px-6">
+          <header className="bg-card flex h-14 items-center justify-between gap-3 border-b px-3 sm:px-6">
             <div className="flex min-w-0 items-center gap-3 text-sm">
               <SidebarTrigger className="text-muted-foreground" />
               <Separator orientation="vertical" className="h-4" />
@@ -155,9 +162,9 @@ export function AppLayout() {
               <span className="text-border">/</span>
               <span className="truncate font-medium">{pageLabel}</span>
             </div>
-            <div className="text-muted-foreground truncate text-xs">{DEMO_OPERATOR_NAME} · 全院</div>
+            <div className="text-muted-foreground hidden truncate text-xs sm:block">{DEMO_OPERATOR_NAME} · 全院</div>
           </header>
-          <div className="px-6 py-5">
+          <div className="px-3 py-4 sm:px-6 sm:py-5">
             {inRuleSample ? (
               <Notice tone="warn" className="mb-4" role="status" data-testid="rule-sample-banner">
                 规则能力样例，不覆盖业务数据。退出后回到主故事对象。当前路径 {location.pathname}

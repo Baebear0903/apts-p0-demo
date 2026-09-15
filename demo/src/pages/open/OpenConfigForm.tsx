@@ -90,6 +90,7 @@ export function OpenConfigForm({
   locked,
   typeLocked,
   objectLocked,
+  errors = [],
 }: {
   state: AppState
   value: OpenFormValue
@@ -97,6 +98,7 @@ export function OpenConfigForm({
   locked: boolean
   typeLocked?: boolean
   objectLocked?: boolean
+  errors?: string[]
 }) {
   const methods = methodsForType(value.type)
   const systems = state.connectedSystems.filter((system) =>
@@ -104,6 +106,21 @@ export function OpenConfigForm({
   )
   const selectedSystem = state.connectedSystems.find((item) => item.id === value.systemId)
   const readOnlyCore = locked
+  const errorFor = (field: 'name' | 'consumer' | 'purpose' | 'description' | 'organization' | 'object' | 'method' | 'system' | 'period' | 'validUntil') => {
+    const patterns = {
+      name: /名称/,
+      consumer: /使用方/,
+      purpose: /用途/,
+      description: /说明/,
+      organization: /责任组织/,
+      object: /快照|动态人群/,
+      method: /数据集交付须|标签订阅须/,
+      system: /已对接系统/,
+      period: /推送周期/,
+      validUntil: /截止时间/,
+    }
+    return errors.find((error) => patterns[field].test(error))
+  }
 
   function patch(partial: Partial<OpenFormValue>) {
     onChange({ ...value, ...partial })
@@ -145,11 +162,20 @@ export function OpenConfigForm({
     })
   }
 
+  const fieldError = (field: Parameters<typeof errorFor>[0], id: string) => {
+    const message = errorFor(field)
+    return message ? <span id={id} className="form-error" role="alert">{message}</span> : null
+  }
+
   return (
-    <div className="form-grid">
+    <div className="open-form">
+      <fieldset className="form-section">
+        <legend>基本信息</legend>
+        <div className="form-grid">
       <label>
         名称
-        <input value={value.name} onChange={(event) => patch({ name: event.target.value })} data-testid="open-name" />
+        <input value={value.name} onChange={(event) => patch({ name: event.target.value })} data-testid="open-name" aria-invalid={Boolean(errorFor('name'))} aria-describedby={errorFor('name') ? 'open-name-error' : undefined} />
+        {fieldError('name', 'open-name-error')}
       </label>
       <label>
         类型
@@ -164,19 +190,6 @@ export function OpenConfigForm({
         </select>
       </label>
       <label>
-        责任组织
-        <select
-          value={value.responsibleOrgId}
-          onChange={(event) => patch({ responsibleOrgId: event.target.value })}
-        >
-          {state.dictionaries.organizations.map((org) => (
-            <option key={org.id} value={org.id}>
-              {organizationName(state, org.id)}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
         使用方
         <input
           list="open-consumers"
@@ -184,7 +197,10 @@ export function OpenConfigForm({
           disabled={readOnlyCore}
           onChange={(event) => patch({ consumer: event.target.value })}
           data-testid="consumer-input"
+          aria-invalid={Boolean(errorFor('consumer'))}
+          aria-describedby={errorFor('consumer') ? 'open-consumer-error' : undefined}
         />
+        {fieldError('consumer', 'open-consumer-error')}
         <datalist id="open-consumers">
           {state.dictionaries.consumers.map((item) => (
             <option key={item} value={item} />
@@ -193,12 +209,20 @@ export function OpenConfigForm({
       </label>
       <label className="span-2">
         用途
-        <input value={value.purpose} onChange={(event) => patch({ purpose: event.target.value })} data-testid="open-purpose" />
+        <input value={value.purpose} onChange={(event) => patch({ purpose: event.target.value })} data-testid="open-purpose" aria-invalid={Boolean(errorFor('purpose'))} aria-describedby={errorFor('purpose') ? 'open-purpose-error' : undefined} />
+        {fieldError('purpose', 'open-purpose-error')}
       </label>
       <label className="span-2">
         说明
-        <textarea value={value.description} onChange={(event) => patch({ description: event.target.value })} />
+        <textarea value={value.description} onChange={(event) => patch({ description: event.target.value })} aria-invalid={Boolean(errorFor('description'))} aria-describedby={errorFor('description') ? 'open-description-error' : undefined} />
+        {fieldError('description', 'open-description-error')}
       </label>
+        </div>
+      </fieldset>
+
+      <fieldset className="form-section">
+        <legend>开放对象</legend>
+        <div className="form-grid">
       {value.type === 'dataset_delivery' ? (
         <label className="span-2">
           绑定快照
@@ -210,6 +234,8 @@ export function OpenConfigForm({
               disabled={readOnlyCore || objectLocked}
               onChange={(event) => patch({ boundSnapshotId: event.target.value })}
               data-testid="bound-snapshot"
+              aria-invalid={Boolean(errorFor('object'))}
+              aria-describedby={errorFor('object') ? 'open-object-error' : undefined}
             >
               <option value="">请选择已确认快照</option>
               {state.snapshots.map((snapshot) => (
@@ -219,6 +245,7 @@ export function OpenConfigForm({
               ))}
             </select>
           )}
+          {fieldError('object', 'open-object-error')}
         </label>
       ) : (
         <label className="span-2">
@@ -231,6 +258,8 @@ export function OpenConfigForm({
               disabled={readOnlyCore || objectLocked}
               onChange={(event) => patch({ boundDynamicCohortId: event.target.value })}
               data-testid="bound-cohort"
+              aria-invalid={Boolean(errorFor('object'))}
+              aria-describedby={errorFor('object') ? 'open-object-error' : undefined}
             >
               <option value="">请选择动态人群</option>
               {state.dynamicCohorts.map((cohort) => (
@@ -240,8 +269,15 @@ export function OpenConfigForm({
               ))}
             </select>
           )}
+          {fieldError('object', 'open-object-error')}
         </label>
       )}
+        </div>
+      </fieldset>
+
+      <fieldset className="form-section">
+        <legend>交付方式</legend>
+        <div className="form-grid">
       <label>
         方式
         <select
@@ -249,6 +285,8 @@ export function OpenConfigForm({
           disabled={value.method === 'direct_export' && locked}
           onChange={(event) => changeMethod(event.target.value as DeliveryMethod)}
           data-testid="open-method"
+          aria-invalid={Boolean(errorFor('method'))}
+          aria-describedby={errorFor('method') ? 'open-method-error' : undefined}
         >
           {methods.map((method) => (
             <option key={method} value={method}>
@@ -256,6 +294,7 @@ export function OpenConfigForm({
             </option>
           ))}
         </select>
+        {fieldError('method', 'open-method-error')}
       </label>
       {value.method === 'direct_export' ? (
         <p className="muted span-2">直接导出不选择已对接系统，使用方由用户填写。</p>
@@ -267,6 +306,8 @@ export function OpenConfigForm({
             disabled={readOnlyCore}
             onChange={(event) => changeSystem(event.target.value)}
             data-testid="system-select"
+            aria-invalid={Boolean(errorFor('system'))}
+            aria-describedby={errorFor('system') ? 'open-system-error' : undefined}
           >
             <option value="">请选择系统</option>
             {systems.map((system) => (
@@ -275,6 +316,7 @@ export function OpenConfigForm({
               </option>
             ))}
           </select>
+          {fieldError('system', 'open-system-error')}
         </label>
       )}
       {selectedSystem && value.method === 'on_demand_query' ? (
@@ -290,6 +332,8 @@ export function OpenConfigForm({
             value={value.pushPeriodMinutes}
             onChange={(event) => patch({ pushPeriodMinutes: event.target.value })}
             data-testid="push-period"
+            aria-invalid={Boolean(errorFor('period'))}
+            aria-describedby={errorFor('period') ? 'open-period-error' : undefined}
           >
             <option value="">请选择周期</option>
             {(selectedSystem?.pushPeriodMinutes ?? []).map((minutes) => (
@@ -298,8 +342,31 @@ export function OpenConfigForm({
               </option>
             ))}
           </select>
+          {fieldError('period', 'open-period-error')}
         </label>
       ) : null}
+        </div>
+      </fieldset>
+
+      <fieldset className="form-section">
+        <legend>有效期与责任</legend>
+        <div className="form-grid">
+      <label>
+        责任组织
+        <select
+          value={value.responsibleOrgId}
+          onChange={(event) => patch({ responsibleOrgId: event.target.value })}
+          aria-invalid={Boolean(errorFor('organization'))}
+          aria-describedby={errorFor('organization') ? 'open-organization-error' : undefined}
+        >
+          {state.dictionaries.organizations.map((org) => (
+            <option key={org.id} value={org.id}>
+              {organizationName(state, org.id)}
+            </option>
+          ))}
+        </select>
+        {fieldError('organization', 'open-organization-error')}
+      </label>
       <label>
         有效期
         <select
@@ -319,11 +386,16 @@ export function OpenConfigForm({
             value={value.validUntilLocal}
             onChange={(event) => patch({ validUntilLocal: event.target.value })}
             data-testid="valid-until"
+            aria-invalid={Boolean(errorFor('validUntil'))}
+            aria-describedby={errorFor('validUntil') ? 'open-valid-until-error' : undefined}
           />
+          {fieldError('validUntil', 'open-valid-until-error')}
         </label>
       ) : (
         <p className="muted">默认长期有效。查询间隔、推送周期与有效期分开。</p>
       )}
+        </div>
+      </fieldset>
     </div>
   )
 }

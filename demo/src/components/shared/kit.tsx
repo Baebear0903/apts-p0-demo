@@ -1,4 +1,4 @@
-import type { ComponentProps, ReactNode } from 'react'
+import { cloneElement, isValidElement, useId, type ComponentProps, type ReactElement, type ReactNode } from 'react'
 import { cn } from 'cn'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { Badge } from '@/components/ui/badge'
@@ -76,10 +76,15 @@ export function FormField({
   className?: string
   span2?: boolean
 }) {
+  const generatedId = useId()
+  const control = isValidElement(children)
+    ? cloneElement(children as ReactElement<{ id?: string }>, { id: (children.props as { id?: string }).id ?? generatedId })
+    : children
+  const controlId = isValidElement(control) ? (control.props as { id?: string }).id : undefined
   return (
     <Field className={cn(span2 && 'sm:col-span-2', className)}>
-      <FieldLabel className="text-muted-foreground font-normal">{label}</FieldLabel>
-      {children}
+      <FieldLabel htmlFor={controlId} className="text-muted-foreground font-normal">{label}</FieldLabel>
+      {control}
     </Field>
   )
 }

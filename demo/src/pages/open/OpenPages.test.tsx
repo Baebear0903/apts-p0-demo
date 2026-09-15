@@ -1,10 +1,10 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import App from '../../App'
 import { createInitialState } from '../../data/seed'
 import { BATCH_INITIAL_ID, DEMO_OPEN_EXPORT_NAME, SYS_PATIENT_ID, TAG_ADULT_ID, TAG_EYE_OP_ID } from '../../domain/ids'
-import { DemoStoreProvider } from '../../store/DemoStoreContext'
+import { DemoStoreProvider, useDemoStore } from '../../store/DemoStoreContext'
 import { confirmRecognitionBatch, enableOpenConfig, saveDynamicCohort, saveOpenConfig } from '../../store/store'
 import { queryIncludeExclude } from '../../store/cohorts'
 
@@ -13,6 +13,22 @@ function renderApp(path: string, state = createInitialState()) {
     <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <DemoStoreProvider initialState={state}>
         <App />
+      </DemoStoreProvider>
+    </MemoryRouter>,
+  )
+}
+
+function OpenConfigCount() {
+  const { state } = useDemoStore()
+  return <output data-testid="open-config-count">{state.openConfigs.length}</output>
+}
+
+function renderAppWithStateProbe(path: string, state = createInitialState()) {
+  return render(
+    <MemoryRouter initialEntries={[path]} future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <DemoStoreProvider initialState={state}>
+        <App />
+        <OpenConfigCount />
       </DemoStoreProvider>
     </MemoryRouter>,
   )
@@ -76,6 +92,18 @@ describe('数据开放页面', () => {
     fireEvent.click(screen.getByTestId('enable-open'))
     expect(screen.getByTestId('open-status')).toHaveTextContent('授权已启用')
     expect(screen.getByTestId('consumer-input')).toBeDisabled()
+  })
+
+  it('启用失败留在表单、显示就地错误且不产生草稿', async () => {
+    const state = createInitialState()
+    renderAppWithStateProbe('/open/new', state)
+    expect(screen.getByTestId('open-config-count')).toHaveTextContent(String(state.openConfigs.length))
+    fireEvent.click(screen.getByTestId('enable-open'))
+    expect(screen.getByRole('heading', { name: '新建开放配置' })).toBeInTheDocument()
+    expect(screen.getByTestId('open-config-count')).toHaveTextContent(String(state.openConfigs.length))
+    expect(screen.getByText('名称须为 1 至 100 字', { selector: '.form-error' })).toBeInTheDocument()
+    expect(screen.getByTestId('open-name')).toHaveAttribute('aria-invalid', 'true')
+    await waitFor(() => expect(screen.getByTestId('open-name')).toHaveFocus())
   })
 
   it('工作台摘要点名称进详情、点状态进筛选列表', () => {

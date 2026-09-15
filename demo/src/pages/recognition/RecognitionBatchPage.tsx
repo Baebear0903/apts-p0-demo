@@ -14,9 +14,9 @@ import {
   tagById,
   uniquePatientIds,
 } from '../../store/selectors'
-import { confirmRecognitionBatch, removeFromReview } from '../../store/store'
+import { confirmRecognitionBatch, removeFromReview, undoRemoveFromReview } from '../../store/store'
 import { PageHeader, StatusText } from '@/components/shared/PageHeader'
-import { Toast } from '@/components/shared/Modal'
+import { Modal, Toast } from '@/components/shared/Modal'
 import { MemberTable, PatientEvidencePanel } from '@/components/patients/PatientEvidencePanel'
 import { Button, Dd, DescriptionList, Dt, EmptyHint, Muted, PageStack, Panel, Toolbar } from '@/components/shared/kit'
 
@@ -32,6 +32,7 @@ export function RecognitionBatchPage() {
   const retainedIds = reviewRetainedIds(state, batchId)
   const [selectedId, setSelectedId] = useState(originalIds[0] ?? '')
   const [toast, setToast] = useState<{ text: string; tone: 'error' | 'ok' } | null>(null)
+  const [confirmOpen, setConfirmOpen] = useState(false)
 
   const reviewable = batch ? isBatchReviewable(state, batch) : false
   const canConfirm = state.session.permissions.buttons.recognitionConfirm
@@ -70,10 +71,21 @@ export function RecognitionBatchPage() {
       return
     }
     patch(() => result.state)
+    setConfirmOpen(false)
     setToast({
       text: result.snapshotId ? '已确认并生成快照' : '已确认，零保留，未生成空快照',
       tone: 'ok',
     })
+  }
+
+  function undo(patientId: string) {
+    const result = undoRemoveFromReview(state, batchId, patientId)
+    if (!result.ok) {
+      setToast({ text: result.reason, tone: 'error' })
+      return
+    }
+    patch(() => result.state)
+    setToast({ text: '已撤销移除，患者恢复为待确认保留', tone: 'ok' })
   }
 
   return (
@@ -104,11 +116,12 @@ export function RecognitionBatchPage() {
                   : '待确认（全院）'}
             </StatusText>
           </Dd>
-          <Dt>原始命中</Dt>
-          <Dd>{originalIds.length}</Dd>
-          <Dt>待确认保留</Dt>
-          <Dd data-testid="retained-count">{retainedIds.length}</Dd>
         </DescriptionList>
+        <div className="mt-4 grid grid-cols-3 overflow-hidden rounded-lg border bg-muted/20 text-center" aria-label="复核人数汇总">
+          <ReviewCount label="原始命中" value={originalIds.length} />
+          <ReviewCount label="已移除" value={removedIds.length} tone="warn" />
+          <ReviewCount label="最终保留" value={retainedIds.length} tone="ok" testId="retained-count" />
+        </div>
         {snapshotId ? (
           <p className="mt-3 text-sm">
             已生成快照{' '}
@@ -119,8 +132,8 @@ export function RecognitionBatchPage() {
         ) : null}
         {reviewable && canConfirm ? (
           <Toolbar className="mt-4">
-            <Button type="button" data-testid="confirm-batch" onClick={confirm}>
-              确认保留为快照
+            <Button type="button" data-testid="confirm-batch" onClick={() => setConfirmOpen(true)}>
+              核对并确认快照
             </Button>
             <Muted className="m-0">全移除则不生成空快照，只留零人确认记录。</Muted>
           </Toolbar>
@@ -139,9 +152,14 @@ export function RecognitionBatchPage() {
             trailing={(patientId) => {
               const patient = patientById(state, patientId)
               return (
-                <Link className="text-primary hover:underline" to={patientPath(patientId, from)}>
-                  {patient ? '完整画像' : '打开'}
-                </Link>
+                <Toolbar className="flex-nowrap justify-end">
+                  {removedIds.includes(patientId) ? (
+                    <Button type="button" variant="outline" size="sm" onClick={() => undo(patientId)}>撤销移除</Button>
+                  ) : null}
+                  <Link className="text-primary whitespace-nowrap hover:underline" to={patientPath(patientId, from)}>
+                    {patient ? '完整画像' : '打开'}
+                  </Link>
+                </Toolbar>
               )
             }}
           />
@@ -163,6 +181,48 @@ export function RecognitionBatchPage() {
         </div>
       </div>
       </PageStack>
+      {confirmOpen ? (
+        <Modal title="确认本批次复核结果" onClose={() => setConfirmOpen(false)}>
+          <div className="grid grid-cols-3 overflow-hidden rounded-lg border bg-muted/20 text-center">
+            <ReviewCount label="原始命中" value={originalIds.length} />
+            <ReviewCount label="已移除" value={removedIds.length} tone="warn" />
+            <ReviewCount label="最终保留" value={retainedIds.length} tone="ok" />
+          </div>
+          <p className="text-sm">
+            {retainedIds.length > 0
+              ? `确认后将生成一张包含 ${retainedIds.length} 人的固定快照，本批次立即只读。`
+              : '已全部移除：确认后只保留零人复核记录，不生成空快照。'}
+          </p>
+          <Toolbar className="justify-end">
+            <Button type="button" variant="outline" onClick={() => setConfirmOpen(false)}>返回检查</Button>
+            <Button type="button" data-testid="confirm-batch-final" onClick={confirm}>确认并生效</Button>
+          </Toolbar>
+        </Modal>
+      ) : null}
     </section>
+  )
+}
+
+function ReviewCount({
+  label,
+  value,
+  tone,
+  testId,
+}: {
+  label: string
+  value: number
+  tone?: 'warn' | 'ok'
+  testId?: string
+}) {
+  return (
+    <div className="min-w-0 border-r px-2 py-3 last:border-r-0">
+      <div
+        className={tone === 'warn' ? 'text-lg font-semibold text-amber-700' : tone === 'ok' ? 'text-lg font-semibold text-primary' : 'text-lg font-semibold'}
+        data-testid={testId}
+      >
+        {value}
+      </div>
+      <div className="text-muted-foreground mt-0.5 text-xs">{label}</div>
+    </div>
   )
 }

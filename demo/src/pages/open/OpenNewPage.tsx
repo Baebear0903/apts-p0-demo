@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { ROUTES, cohortDetailPath, openDetailPath } from '../../app/routes'
 import type { OpenConfigType } from '../../domain/types'
@@ -37,10 +37,17 @@ export function OpenNewPage() {
 
   const [form, setForm] = useState<OpenFormValue>(initial)
   const [toast, setToast] = useState<{ text: string; tone: 'error' | 'ok' } | null>(null)
+  const [errors, setErrors] = useState<string[]>([])
   const canCreate = state.session.permissions.buttons.openCreate
   const canEnable = state.session.permissions.buttons.openEnable
 
+  useEffect(() => {
+    if (errors.length === 0) return
+    document.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()
+  }, [errors])
+
   function persist(enable: boolean) {
+    setErrors([])
     const saved = saveOpenConfig(state, inputFromForm(form))
     if (!saved.ok) {
       setToast({ text: saved.reason, tone: 'error' })
@@ -53,9 +60,9 @@ export function OpenNewPage() {
     }
     const enabled = enableOpenConfig(saved.state, saved.id)
     if (!enabled.ok) {
-      patch(() => saved.state)
+      const nextErrors = enabled.reason.split('；').filter(Boolean)
+      setErrors(nextErrors)
       setToast({ text: enabled.reason, tone: 'error' })
-      navigate(openDetailPath(saved.id))
       return
     }
     patch(() => enabled.state)
@@ -97,10 +104,15 @@ export function OpenNewPage() {
           <OpenConfigForm
             state={state}
             value={form}
-            onChange={setForm}
+            onChange={(next) => {
+              setForm(next)
+              setErrors([])
+              setToast(null)
+            }}
             locked={false}
             typeLocked={prefillSubscription || prefillDataset}
             objectLocked={prefillSubscription || prefillDataset}
+            errors={errors}
           />
           <div className="toolbar-actions">
             {canCreate ? (

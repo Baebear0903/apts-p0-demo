@@ -26,6 +26,14 @@ import {
   wrapIfNeeded,
 } from '../../engine/logicTree'
 import { Button, Panel, Toolbar } from '@/components/shared/kit'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import { buttonVariants } from '@/components/ui/button'
+import { Plus } from 'lucide-react'
 
 const JUDGMENT_LABEL: Record<JudgmentType, string> = {
   direct_compare: '直接比较',
@@ -86,22 +94,33 @@ export function RuleEditor({
         title="逻辑树"
         action={
           !readOnly ? (
-            <Toolbar className="mb-0">
-              <Button type="button" variant="outline" size="sm" onClick={() => add('condition')}>
-                添加条件
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => add('group')}>
-                添加分组
-              </Button>
-              <Button type="button" variant="outline" size="sm" onClick={() => add('record_group')}>
-                添加记录条件组
-              </Button>
-              {tagType === 'composite' ? (
-                <Button type="button" variant="outline" size="sm" onClick={() => add('tag_ref')} disabled={publishedBasic(state).length === 0}>
-                  引用基础标签
-                </Button>
-              ) : null}
-            </Toolbar>
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger className={buttonVariants({ variant: 'outline', size: 'sm', className: 'sm:hidden' })}>
+                  <Plus />添加…
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-44">
+                  <DropdownMenuItem onClick={() => add('condition')}>添加条件</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => add('group')}>添加分组</DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => add('record_group')}>添加记录条件组</DropdownMenuItem>
+                  {tagType === 'composite' ? (
+                    <DropdownMenuItem disabled={publishedBasic(state).length === 0} onClick={() => add('tag_ref')}>
+                      引用基础标签
+                    </DropdownMenuItem>
+                  ) : null}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Toolbar className="mb-0 hidden sm:flex">
+                <Button type="button" variant="outline" size="sm" onClick={() => add('condition')}>添加条件</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => add('group')}>添加分组</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => add('record_group')}>添加记录条件组</Button>
+                {tagType === 'composite' ? (
+                  <Button type="button" variant="outline" size="sm" onClick={() => add('tag_ref')} disabled={publishedBasic(state).length === 0}>
+                    引用基础标签
+                  </Button>
+                ) : null}
+              </Toolbar>
+            </>
           ) : null
         }
       >
@@ -116,6 +135,11 @@ export function RuleEditor({
             node={selected}
             readOnly={readOnly}
             onChange={(next) => onChange(updateNode(logic, selected.id, () => next))}
+            onRemove={() => {
+              const next = removeNode(logic, selected.id)
+              onChange(next)
+              onSelect(next.id)
+            }}
           />
         ) : null}
         {selected.kind === 'group' ? (
@@ -209,11 +233,13 @@ function ConditionParams({
   node,
   readOnly,
   onChange,
+  onRemove,
 }: {
   state: AppState
   node: ConditionNode
   readOnly: boolean
   onChange: (node: ConditionNode) => void
+  onRemove: () => void
 }) {
   const metric = state.metrics.find((item) => item.id === node.metricId)
   const metrics = state.metrics.filter((item) => item.status === 'active' || item.id === node.metricId)
@@ -264,6 +290,11 @@ function ConditionParams({
           eventTypes={state.dictionaries.eventTypes}
           onChange={(judgment) => onChange({ ...node, judgment })}
         />
+      ) : null}
+      {!readOnly ? (
+        <Button type="button" variant="outline" size="sm" onClick={onRemove}>
+          删除该条件
+        </Button>
       ) : null}
     </div>
   )

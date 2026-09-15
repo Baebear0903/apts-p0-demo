@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../data/seed'
@@ -54,5 +54,33 @@ describe('标签中心与指标库权限／试算', () => {
     const state = setButtonPermission(createInitialState(), 'tagEdit', false)
     renderAt(`/tags/${TAG_EYE_OP_ID}`, state)
     expect(screen.queryByRole('button', { name: '保存生效修改' })).toBeNull()
+  })
+
+  it('普通条件可从参数区删除', () => {
+    renderAt(`/tags/${TAG_EYE_OP_ID}`)
+    const conditionLabels = screen.getAllByText('条件')
+    const before = conditionLabels.length
+    act(() => {
+      conditionLabels[0]?.closest('button')?.click()
+    })
+    expect(screen.getByRole('button', { name: '删除该条件' })).toBeInTheDocument()
+    act(() => {
+      screen.getByRole('button', { name: '删除该条件' }).click()
+    })
+    expect(screen.queryAllByText('条件')).toHaveLength(before - 1)
+  })
+
+  it('衍生指标表单展示统计、关联与日期差所需配置', () => {
+    renderAt('/admin/metrics')
+    fireEvent.click(screen.getByRole('button', { name: '新建指标' }))
+    fireEvent.change(screen.getByLabelText('类型'), { target: { value: 'derived' } })
+    expect(screen.getByLabelText('衍生函数')).toBeInTheDocument()
+    expect(screen.getByLabelText('统计指标')).toBeInTheDocument()
+    expect(screen.getByLabelText('窗口天数')).toBeInTheDocument()
+    expect(screen.getByLabelText('观察粒度')).toBeInTheDocument()
+    fireEvent.change(screen.getByLabelText('衍生函数'), { target: { value: 'date_diff' } })
+    expect(screen.getByLabelText('起点指标')).toBeInTheDocument()
+    expect(screen.getByLabelText('终点指标')).toBeInTheDocument()
+    expect(screen.getByLabelText('日期差单位')).toBeInTheDocument()
   })
 })

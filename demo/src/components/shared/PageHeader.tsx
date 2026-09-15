@@ -42,7 +42,7 @@ export function PageHeader({
             </BreadcrumbList>
           </Breadcrumb>
         ) : null}
-        <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+        <h2 data-page-title tabIndex={-1} className="text-xl font-semibold tracking-tight outline-none">{title}</h2>
         {description ? <div className="text-muted-foreground text-sm">{description}</div> : null}
       </div>
       <div className="flex flex-wrap items-center gap-2 lg:justify-end">

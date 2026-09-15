@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
-import type { DataGrain, DerivedFunction, JudgmentType, Metric, MetricCatalog, MetricKind, ValueType } from '../../domain/types'
+import type { CompareOp, DataGrain, DerivedFunction, JudgmentType, Metric, MetricCatalog, MetricKind, ValueType } from '../../domain/types'
 import { metricReferences } from '../../engine/availability'
+import { defaultCompareOp, opsForValueType } from '../../engine/compare'
 import { sourceApplicableJudgments } from '../../engine/logicTree'
 import { canChangeMetricBinding } from '../../engine/validate'
 import { useDemoStore } from '../../store/DemoStoreContext'
@@ -29,6 +30,18 @@ const JUDGMENT_LABEL: Record<JudgmentType, string> = {
   consecutive_dates: '连续日期',
   first_abnormal: '首次异常',
   change: '较前变化',
+}
+
+const COMPARE_OP_LABEL: Record<CompareOp, string> = {
+  eq: '等于',
+  neq: '不等于',
+  gt: '大于',
+  gte: '大于等于',
+  lt: '小于',
+  lte: '小于等于',
+  between: '介于',
+  in: '属于',
+  not_in: '不属于',
 }
 
 export function MetricsPage() {
@@ -291,6 +304,7 @@ function MetricModal({
                   derived: draft.derived ?? {
                     function: 'avg',
                     inputMetricIds: [],
+                    observationGrain: '采集',
                     windowDays: 30,
                     formula: '',
                     resultUnit: draft.unit,
@@ -405,22 +419,92 @@ function DerivedFields({
 }) {
   const spec = draft.derived ?? { function: 'avg' as DerivedFunction, inputMetricIds: [] as string[] }
   const inputs = metrics.filter((item) => item.id !== draft.id)
+  const selectedInput = inputs.find((item) => item.id === spec.inputMetricIds[0])
+  const isWindowStat = spec.function !== 'arithmetic' && spec.function !== 'date_diff'
+
+  function changeFunction(fn: DerivedFunction) {
+    const numeric = inputs.find((item) => item.valueType === 'number' || item.valueType === 'integer')
+    const datetimes = inputs.filter((item) => item.valueType === 'datetime')
+    if (fn === 'date_diff') {
+      const start = datetimes[0]?.id ?? ''
+      const end = datetimes[1]?.id ?? ''
+      onChange({
+        ...draft,
+        derived: {
+          function: fn,
+          inputMetricIds: [start, end].filter(Boolean),
+          association: 'same_observation',
+          dateStartMetricId: start,
+          dateEndMetricId: end,
+          dateDiffUnit: 'days',
+          resultUnit: '天',
+        },
+        unit: '天',
+        grain: '患者',
+        valueType: 'number',
+        applicableJudgments: ['direct_compare'],
+      })
+      return
+    }
+    if (fn === 'arithmetic') {
+      onChange({
+        ...draft,
+        derived: {
+          function: fn,
+          inputMetricIds: numeric ? [numeric.id] : [],
+          association: 'same_observation',
+          formula: '$0',
+          resultUnit: draft.unit,
+        },
+        grain: '患者',
+        valueType: 'number',
+        applicableJudgments: ['direct_compare'],
+      })
+      return
+    }
+    onChange({
+      ...draft,
+      derived: {
+        function: fn,
+        inputMetricIds: numeric ? [numeric.id] : [],
+        observationGrain: numeric?.grain ?? '采集',
+        windowDays: 30,
+        resultUnit: draft.unit,
+      },
+      grain: '患者',
+      valueType: 'number',
+      applicableJudgments: ['direct_compare'],
+    })
+  }
+
+  function changeDateInput(role: 'start' | 'end', metricId: string) {
+    const start = role === 'start' ? metricId : spec.dateStartMetricId ?? ''
+    const end = role === 'end' ? metricId : spec.dateEndMetricId ?? ''
+    onChange({
+      ...draft,
+      derived: {
+        ...spec,
+        dateStartMetricId: start,
+        dateEndMetricId: end,
+        inputMetricIds: [start, end].filter(Boolean),
+      },
+    })
+  }
+
+  function filterValue(value: string): unknown {
+    if (selectedInput?.valueType === 'number' || selectedInput?.valueType === 'integer') {
+      return value === '' ? '' : Number(value)
+    }
+    return value
+  }
+
   return (
     <>
       <label>
         衍生函数
         <select
           value={spec.function}
-          onChange={(event) => {
-            const fn = event.target.value as DerivedFunction
-            onChange({
-              ...draft,
-              derived: { ...spec, function: fn },
-              grain: '患者',
-              valueType: fn === 'date_diff' ? 'number' : 'number',
-              applicableJudgments: ['direct_compare'],
-            })
-          }}
+          onChange={(event) => changeFunction(event.target.value as DerivedFunction)}
         >
           <option value="count">窗口计数</option>
           <option value="sum">窗口求和</option>
@@ -431,23 +515,77 @@ function DerivedFields({
           <option value="date_diff">日期差</option>
         </select>
       </label>
-      <label>
-        输入指标
-        <select
-          multiple
-          value={spec.inputMetricIds}
-          onChange={(event) => {
-            const selected = Array.from(event.target.selectedOptions).map((item) => item.value)
-            onChange({ ...draft, derived: { ...spec, inputMetricIds: selected } })
-          }}
-        >
-          {inputs.map((item) => (
-            <option key={item.id} value={item.id}>
-              {item.name}
-            </option>
-          ))}
-        </select>
-      </label>
+      {spec.function === 'arithmetic' ? (
+        <label>
+          输入指标（按公式序号选择）
+          <select
+            multiple
+            value={spec.inputMetricIds}
+            onChange={(event) => {
+              const selected = Array.from(event.target.selectedOptions).map((item) => item.value)
+              onChange({ ...draft, derived: { ...spec, inputMetricIds: selected } })
+            }}
+          >
+            {inputs.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}（{item.grain}）
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      {spec.function === 'date_diff' ? (
+        <>
+          <label>
+            起点指标
+            <select value={spec.dateStartMetricId ?? ''} onChange={(event) => changeDateInput('start', event.target.value)}>
+              <option value="">请选择起点</option>
+              {inputs.filter((item) => item.valueType === 'datetime').map((item) => (
+                <option key={item.id} value={item.id}>{item.name}</option>
+              ))}
+            </select>
+          </label>
+          <label>
+            终点指标
+            <select value={spec.dateEndMetricId ?? ''} onChange={(event) => changeDateInput('end', event.target.value)}>
+              <option value="">请选择终点</option>
+              {inputs.filter((item) => item.valueType === 'datetime').map((item) => (
+                <option key={item.id} value={item.id}>{item.name}</option>
+              ))}
+            </select>
+          </label>
+        </>
+      ) : null}
+      {isWindowStat ? (
+        <label>
+          统计指标
+          <select
+            value={spec.inputMetricIds[0] ?? ''}
+            onChange={(event) => {
+              const input = inputs.find((item) => item.id === event.target.value)
+              onChange({ ...draft, derived: { ...spec, inputMetricIds: input ? [input.id] : [], observationGrain: input?.grain } })
+            }}
+          >
+            <option value="">请选择指标</option>
+            {inputs.filter((item) => item.valueType === 'number' || item.valueType === 'integer').map((item) => (
+              <option key={item.id} value={item.id}>{item.name}（{item.grain}）</option>
+            ))}
+          </select>
+        </label>
+      ) : null}
+      {(spec.function === 'arithmetic' || spec.function === 'date_diff') && spec.inputMetricIds.length > 1 ? (
+        <label>
+          取值与关联方式
+          <select
+            value={spec.association ?? ''}
+            onChange={(event) => onChange({ ...draft, derived: { ...spec, association: event.target.value as NonNullable<typeof spec.association> } })}
+          >
+            <option value="">请选择</option>
+            <option value="same_observation">同一次观察（关联键一致）</option>
+            <option value="same_patient_latest">同一患者（各输入取最新值）</option>
+          </select>
+        </label>
+      ) : null}
       {spec.function === 'arithmetic' ? (
         <label>
           公式（$0、$1 对应输入顺序；支持 + − × ÷ 与括号）
@@ -457,15 +595,70 @@ function DerivedFields({
           />
         </label>
       ) : null}
-      {spec.function !== 'arithmetic' && spec.function !== 'date_diff' ? (
+      {isWindowStat ? (
+        <>
+          <label>
+            窗口天数
+            <input
+              type="number"
+              min={1}
+              value={spec.windowDays ?? 30}
+              onChange={(event) => onChange({ ...draft, derived: { ...spec, windowDays: Number(event.target.value) } })}
+            />
+          </label>
+          <label>
+            观察粒度
+            <select
+              value={spec.observationGrain ?? ''}
+              onChange={(event) => onChange({ ...draft, derived: { ...spec, observationGrain: event.target.value as DataGrain } })}
+            >
+              <option value="">请选择粒度</option>
+              <option value="患者">患者</option>
+              <option value="就诊">就诊</option>
+              <option value="采集">采集</option>
+            </select>
+          </label>
+          <label className="check-row">
+            <input
+              type="checkbox"
+              checked={Boolean(spec.filter)}
+              onChange={(event) => onChange({
+                ...draft,
+                derived: {
+                  ...spec,
+                  filter: event.target.checked
+                    ? { op: defaultCompareOp(selectedInput?.valueType ?? 'number'), value: '' }
+                    : undefined,
+                },
+              })}
+            />
+            仅统计满足条件的记录（可选）
+          </label>
+          {spec.filter ? (
+            <div className="grid grid-cols-[minmax(7rem,auto)_minmax(0,1fr)] gap-2">
+              <select
+                aria-label="窗口过滤比较符"
+                value={spec.filter.op}
+                onChange={(event) => onChange({ ...draft, derived: { ...spec, filter: { ...spec.filter!, op: event.target.value as CompareOp } } })}
+              >
+                {opsForValueType(selectedInput?.valueType ?? 'number').map((op) => <option key={op} value={op}>{COMPARE_OP_LABEL[op]}</option>)}
+              </select>
+              <input
+                aria-label="窗口过滤值"
+                value={String(spec.filter.value ?? '')}
+                onChange={(event) => onChange({ ...draft, derived: { ...spec, filter: { ...spec.filter!, value: filterValue(event.target.value) } } })}
+              />
+            </div>
+          ) : null}
+        </>
+      ) : null}
+      {spec.function === 'date_diff' ? (
         <label>
-          窗口天数
-          <input
-            type="number"
-            min={1}
-            value={spec.windowDays ?? 30}
-            onChange={(event) => onChange({ ...draft, derived: { ...spec, windowDays: Number(event.target.value) } })}
-          />
+          日期差单位
+          <select value={spec.dateDiffUnit ?? ''} onChange={(event) => onChange({ ...draft, derived: { ...spec, dateDiffUnit: event.target.value as 'days' } })}>
+            <option value="">请选择单位</option>
+            <option value="days">天</option>
+          </select>
         </label>
       ) : null}
       <label>

@@ -1,11 +1,11 @@
-import { act, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { createInitialState } from '../../data/seed'
 import { BATCH_INITIAL_ID, TAG_EYE_OP_ID } from '../../domain/ids'
 import { DemoStoreProvider } from '../../store/DemoStoreContext'
-import { confirmRecognitionBatch, generateAutoRecognitionBatch, removeFromReview } from '../../store/store'
-import { hitsOfBatch, uniquePatientIds, workbenchStats } from '../../store/selectors'
+import { confirmRecognitionBatch, generateAutoRecognitionBatch, removeFromReview, undoRemoveFromReview } from '../../store/store'
+import { hitsOfBatch, reviewRemovedIds, uniquePatientIds, workbenchStats } from '../../store/selectors'
 import { RecognitionBatchPage } from './RecognitionBatchPage'
 import { RecognitionOverviewPage } from './RecognitionOverviewPage'
 import { WorkbenchPage } from '../WorkbenchPage'
@@ -87,5 +87,23 @@ describe('识别批次 UI', () => {
     if (!confirmed.ok) return
     expect(confirmed.snapshotId).toBeNull()
     expect(confirmed.state.snapshots).toHaveLength(next.snapshots.length)
+  })
+
+  it('移除可撤销，确认前明确展示原始、移除和保留人数', () => {
+    const removed = removeFromReview(createInitialState(), BATCH_INITIAL_ID, LI_QIANG, 'not_satisfy')
+    expect(removed.ok).toBe(true)
+    if (!removed.ok) return
+    const undone = undoRemoveFromReview(removed.state, BATCH_INITIAL_ID, LI_QIANG)
+    expect(undone.ok).toBe(true)
+    if (!undone.ok) return
+    expect(reviewRemovedIds(undone.state, BATCH_INITIAL_ID)).not.toContain(LI_QIANG)
+
+    renderPath(`/recognition/${TAG_EYE_OP_ID}/batches/${BATCH_INITIAL_ID}`, removed.state)
+    expect(screen.getByLabelText('复核人数汇总')).toHaveTextContent('6原始命中1已移除5最终保留')
+    fireEvent.click(screen.getByTestId('confirm-batch'))
+    expect(screen.getByRole('dialog')).toHaveTextContent('6原始命中1已移除5最终保留')
+    fireEvent.click(screen.getByRole('button', { name: '返回检查' }))
+    fireEvent.click(screen.getByRole('button', { name: '撤销移除' }))
+    expect(screen.getByTestId('retained-count')).toHaveTextContent('6')
   })
 })

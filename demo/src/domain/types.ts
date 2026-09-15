@@ -267,10 +267,15 @@ export type DerivedFunction = 'avg' | 'sum' | 'count' | 'max' | 'min' | 'arithme
 export type DerivedMetricSpec = {
   function: DerivedFunction
   inputMetricIds: string[]
+  association?: 'same_patient_latest' | 'same_observation'
+  observationGrain?: DataGrain
+  filter?: { op: CompareOp; value: unknown }
   windowDays?: number
   formula?: string
   resultUnit?: string
   dateDiffUnit?: 'days'
+  dateStartMetricId?: string
+  dateEndMetricId?: string
 }
 
 export type Metric = {

@@ -119,31 +119,40 @@ export function PatientEvidencePanel({
         </Panel>
       ) : null}
 
-      <Panel title="触发时证据">
-        {triggerScore ? (
-          <p>
-            触发时眼表评分 <strong data-testid="trigger-score">{String(triggerScore.value)}</strong>
-            <span className="text-muted-foreground text-xs"> · 业务时间 {formatDateTime(triggerScore.businessTime)}</span>
-          </p>
-        ) : null}
-        {currentScore ? (
-          <p>
-            当前眼表评分 <strong data-testid="current-score">{String(currentScore.value)}</strong>
-            <span className="text-muted-foreground text-xs"> · 业务时间 {formatDateTime(currentScore.businessTime)}</span>
-          </p>
-        ) : (
-          <Muted>当前无可用眼表评分。</Muted>
-        )}
+      <Panel title="触发时与当前证据" description="触发时证据保持不变；当前值仅帮助复核判断。">
+        <div className="evidence-compare">
+          <section aria-label="触发时眼表评分" className="evidence-snapshot">
+            <span>触发时</span>
+            {triggerScore ? (
+              <>
+                <strong data-testid="trigger-score">{String(triggerScore.value)}</strong>
+                <small>眼表评分 · {formatDateTime(triggerScore.businessTime)}</small>
+              </>
+            ) : <Muted>无保存的眼表评分。</Muted>}
+          </section>
+          <section aria-label="当前眼表评分" className="evidence-current">
+            <span>当前</span>
+            {currentScore ? (
+              <>
+                <strong data-testid="current-score">{String(currentScore.value)}</strong>
+                <small>眼表评分 · {formatDateTime(currentScore.businessTime)}</small>
+              </>
+            ) : <Muted>当前无可用眼表评分。</Muted>}
+          </section>
+        </div>
         {hit?.slots.length ? (
-          <ul className="mt-2 space-y-1 text-sm">
+          <div className="mt-4 border-t pt-3">
+            <p className="mb-2 text-sm font-medium">保存的触发证据</p>
+            <ul className="space-y-1 text-sm">
             {hit.slots.map((slot) => (
               <li key={`${slot.role}-${slot.observationId ?? slot.encounterId ?? slot.metricId}`}>
-                {slot.role}：{String(slot.value)} · {formatDateTime(slot.businessTime)}
+                {evidenceRoleLabel(slot.role)}：{String(slot.value)} · {formatDateTime(slot.businessTime)}
                 {slot.observationId ? ` · ${slot.observationId}` : ''}
                 {slot.encounterId ? ` · ${slot.encounterId}` : ''}
               </li>
             ))}
-          </ul>
+            </ul>
+          </div>
         ) : (
           <Muted>无保存的触发时证据槽位。</Muted>
         )}
@@ -248,9 +257,9 @@ export function MemberTable({
       <TableHeader>
         <TableRow>
           <TableHead>患者</TableHead>
-          <TableHead>标识</TableHead>
-          <TableHead>性别</TableHead>
-          <TableHead>年龄</TableHead>
+          <TableHead className="hidden sm:table-cell">标识</TableHead>
+          <TableHead className="hidden md:table-cell">性别</TableHead>
+          <TableHead className="hidden md:table-cell">年龄</TableHead>
           <TableHead>状态</TableHead>
           {trailing ? <TableHead></TableHead> : null}
         </TableRow>
@@ -262,17 +271,18 @@ export function MemberTable({
             <TableRow
               key={patientId}
               data-state={selectedId === patientId ? 'selected' : undefined}
-              className="member-row"
+              className="member-row data-[state=selected]:bg-primary/10 data-[state=selected]:font-medium"
               data-testid={`member-${patientId}`}
             >
               <TableCell>
                 <Button type="button" variant="link" className="h-auto px-0" onClick={() => onSelect(patientId)}>
                   {patient?.name ?? patientId}
                 </Button>
+                <span className="text-muted-foreground block text-xs sm:hidden">{patientId}</span>
               </TableCell>
-              <TableCell>{patientId}</TableCell>
-              <TableCell>{patient?.sex ?? '—'}</TableCell>
-              <TableCell>{patient?.age ?? '—'}</TableCell>
+              <TableCell className="hidden sm:table-cell">{patientId}</TableCell>
+              <TableCell className="hidden md:table-cell">{patient?.sex ?? '—'}</TableCell>
+              <TableCell className="hidden md:table-cell">{patient?.age ?? '—'}</TableCell>
               <TableCell>
                 {removed.has(patientId) ? <StatusText>已移除</StatusText> : <StatusText>保留</StatusText>}
               </TableCell>
@@ -290,7 +300,7 @@ function buildTimeline(slots: EvidenceSlot[], current?: EvidenceSlot) {
     ...slots.map((slot) => ({
       key: `hit-${slot.role}-${slot.businessTime}-${slot.observationId ?? ''}`,
       businessTime: slot.businessTime,
-      label: `触发 ${slot.role}`,
+      label: `触发时${evidenceRoleLabel(slot.role)}`,
       value: slot.value,
     })),
   ]
@@ -303,6 +313,13 @@ function buildTimeline(slots: EvidenceSlot[], current?: EvidenceSlot) {
     })
   }
   return items.sort((a, b) => (a.businessTime < b.businessTime ? -1 : 1))
+}
+
+function evidenceRoleLabel(role: string): string {
+  if (role === 'age') return '年龄'
+  if (role === 'latest_eye_score') return '最新眼表评分'
+  if (role === 'ophthalmology_visit') return '眼科就诊科室'
+  return role.replaceAll('_', ' ')
 }
 
 function referencedBasicTags(state: AppState, tag: Tag): Tag[] {
